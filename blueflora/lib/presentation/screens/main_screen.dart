@@ -2,7 +2,7 @@
 
 import 'package:blueflora/presentation/screens/views/history_view.dart';
 import 'package:blueflora/presentation/screens/views/home_view.dart';
-import 'package:blueflora/presentation/screens/views/profile_view.dart';
+import 'package:blueflora/presentation/screens/views/addtree_view.dart';
 import 'package:blueflora/presentation/screens/views/trees_view.dart';
 import 'package:flutter/material.dart';
 
@@ -17,12 +17,11 @@ class _MainScreenState extends State<MainScreen> {
   int selectedIndex = 0;
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
     final screens = [
       const HomeView(),
       const TreesView(),
       const HistoryView(),
-      const ProfileView(),
+      const AddtreeView(),
     ];
     return Scaffold(
       body: IndexedStack(index: selectedIndex, children: screens),
@@ -39,24 +38,25 @@ class _MainScreenState extends State<MainScreen> {
             icon: Icon(Icons.home),
             activeIcon: Icon(Icons.home),
             label: "inicio",
+            backgroundColor: Color.fromARGB(255, 7, 146, 14),
           ),
           BottomNavigationBarItem(
             icon: const Icon(Icons.forest),
             activeIcon: const Icon(Icons.forest),
             label: "arboles",
-            backgroundColor: colors.primary,
+            backgroundColor: const Color.fromARGB(255, 7, 146, 14),
           ),
           BottomNavigationBarItem(
             icon: const Icon(Icons.history),
             activeIcon: const Icon(Icons.history),
             label: "historial",
-            backgroundColor: colors.primary,
+            backgroundColor: const Color.fromARGB(255, 7, 146, 14),
           ),
           BottomNavigationBarItem(
             icon: const Icon(Icons.account_circle),
             activeIcon: const Icon(Icons.account_circle),
-            label: "perfil",
-            backgroundColor: colors.primary,
+            label: "Añadir",
+            backgroundColor: const Color.fromARGB(255, 7, 146, 14),
           ),
         ],
       ),

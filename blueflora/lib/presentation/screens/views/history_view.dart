@@ -10,8 +10,6 @@ class _HistoryViewState extends State<HistoryView>{
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      child: Center(child: Column(children: [Text("Historial")],),),
-    );
+    return Center(child: Column(children: [Text("Historial")],),);
   }
 }
