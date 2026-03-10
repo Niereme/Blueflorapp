@@ -1,0 +1,52 @@
+{
+  "arboles": [
+    {
+      "ID": "ARB001",
+      "Nombre": "Roble Viejo",
+      "especie": "Quercus robur",
+      "altura": 12.5,
+      "ubicación": "Parque Central",
+      "riego": "Automático"
+    },
+    {
+      "ID": "ARB002",
+      "Nombre": "Pino Norte",
+      "especie": "Pinus pinea",
+      "altura": 8.3,
+      "ubicación": "Zona Norte",
+      "riego": "Manual"
+    },
+    {
+      "ID": "ARB003",
+      "Nombre": "Jacaranda Azul",
+      "especie": "Jacaranda mimosifolia",
+      "altura": 6.7,
+      "ubicación": "Jardín Botánico",
+      "riego": "Automático"
+    },
+    {
+      "ID": "ARB004",
+      "Nombre": "Álamo Blanco",
+      "especie": "Populus alba",
+      "altura": 10.2,
+      "ubicación": "Ribera del Río",
+      "riego": "Manual"
+    },
+    {
+      "ID": "ARB005",
+      "Nombre": "Encino Dorado",
+      "especie": "Quercus ilex",
+      "altura": 9.1,
+      "ubicación": "Zona Sur",
+      "riego": "Automático"
+    },
+    {
+      "ID": "ARB006",
+      "Nombre": "Sauce Llorón",
+      "especie": "Salix babylonica",
+      "altura": 11.4,
+      "ubicación": "Lago Artificial",
+      "riego": "Automático"
+    }
+  ]
+}

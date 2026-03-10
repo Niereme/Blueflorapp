@@ -3,6 +3,7 @@
 import 'package:blueflora/presentation/screens/views/history_view.dart';
 import 'package:blueflora/presentation/screens/views/home_view.dart';
 import 'package:blueflora/presentation/screens/views/addtree_view.dart';
+import 'package:blueflora/presentation/screens/views/profile_view.dart';
 import 'package:blueflora/presentation/screens/views/trees_view.dart';
 import 'package:flutter/material.dart';
 
@@ -21,10 +22,21 @@ class _MainScreenState extends State<MainScreen> {
       const HomeView(),
       const TreesView(),
       const HistoryView(),
-      const AddtreeView(),
+      const ProfileView(),
     ];
     return Scaffold(
       body: IndexedStack(index: selectedIndex, children: screens),
+      floatingActionButton: FloatingActionButton(
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const AddTreeView(),
+      ),
+    );
+  },
+  child: const Icon(Icons.add),
+),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.shifting,
         currentIndex: selectedIndex,
@@ -55,7 +67,7 @@ class _MainScreenState extends State<MainScreen> {
           BottomNavigationBarItem(
             icon: const Icon(Icons.account_circle),
             activeIcon: const Icon(Icons.account_circle),
-            label: "Añadir",
+            label: "Perfil",
             backgroundColor: const Color.fromARGB(255, 7, 146, 14),
           ),
         ],
