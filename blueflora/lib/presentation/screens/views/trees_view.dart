@@ -3,6 +3,9 @@ import 'package:blueflora/presentation/screens/views/addtree_view.dart';
 import 'package:blueflora/presentation/squares/tree_square.dart';
 import 'package:flutter/material.dart';
 
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
+
 
 
 class TreesView extends StatefulWidget {
@@ -11,25 +14,64 @@ class TreesView extends StatefulWidget {
   State<TreesView> createState() => _TreesViewState();
 }
 class _TreesViewState extends State<TreesView> {
+  Future<void> saveTrees() async {
 
-  List<Tree> trees = [];
+  final prefs = await SharedPreferences.getInstance();
+
+  List<String> treesJson =
+      trees.map((tree) => jsonEncode(tree.toJson())).toList();
+
+  await prefs.setStringList("trees", treesJson);
+
+}
+  Future<void> loadTrees() async {
+
+  final prefs = await SharedPreferences.getInstance();
+
+  final List<String>? treesJson = prefs.getStringList("trees");
+
+  if (treesJson != null) {
+
+    setState(() {
+
+      trees = treesJson
+          .map((tree) => Tree.fromJson(jsonDecode(tree)))
+          .toList();
+
+    });
+
+  }
+
+}
+
+  List<Tree> trees = [ Tree(
+    nombre: "Árbol de prueba",
+    especie: "Pino de Bosque",
+    altura: 4,
+    frecuenciaRiego: "3 días",
+  )];
   Future<void> addTree() async {
 
-  final newTree = await Navigator.push(
+   final result = await Navigator.push(
     context,
     MaterialPageRoute(
       builder: (context) => const AddTreeView(),
     ),
   );
 
-  if (newTree != null) {
+  if (result is Tree) {
     setState(() {
-      trees.add(newTree);
+      trees.add(result);
     });
+    saveTrees();
   }
 
 }
-
+@override
+void initState() {
+  super.initState();
+  loadTrees();
+}
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -58,12 +100,74 @@ class _TreesViewState extends State<TreesView> {
 
       final tree = trees[index];
 
-      return TreeSquare(
-        nombre: tree.nombre,
-        especie: tree.especie,
-        altura: tree.altura,
-        frecuenciaRiego: tree.frecuenciaRiego,
+      return Dismissible(
+  key: Key(tree.nombre + index.toString()),
+
+  direction: DismissDirection.endToStart,
+
+  background: Container(
+    alignment: Alignment.centerRight,
+    padding: const EdgeInsets.symmetric(horizontal: 20),
+    color: Colors.red,
+    child: const Icon(
+      Icons.delete,
+      color: Colors.white,
+    ),
+  ),
+
+  confirmDismiss: (direction) async {
+
+    return await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Eliminar árbol"),
+          content: const Text("¿Seguro que quieres eliminar este árbol?"),
+          actions: [
+
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context, false);
+              },
+              child: const Text("Cancelar"),
+            ),
+
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context, true);
+              },
+              child: const Text("Eliminar"),
+            ),
+
+          ],
+        );
+      },
+    );
+
+  },
+
+  onDismissed: (direction) {
+
+    setState(() {
+      trees.removeAt(index);
+    });
+
+    saveTrees();
+
+  },
+
+  child:TreeSquare(
+  tree: tree,
+  onWater: () {
+    setState(() {
+      trees[index] = tree.copyWith(
+        ultimoRiego: DateTime.now(),
       );
+      saveTrees();
+    });
+  },
+)
+);
 
     },
   ),

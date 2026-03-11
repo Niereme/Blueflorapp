@@ -1,8 +1,13 @@
 import 'package:blueflora/presentation/screens/main_screen.dart';
 import 'package:flutter/material.dart';
+import 'services/notification_service.dart';
+void main() async {
 
-void main() {
-  runApp(const Blueflora());
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await NotificationService.init();
+
+  runApp(Blueflora());
 }
 
 class Blueflora extends StatelessWidget {

@@ -1,7 +1,6 @@
 import 'package:blueflora/domain/tree.dart';
 import 'package:flutter/material.dart';
 
-
 class AddTreeView extends StatefulWidget {
   const AddTreeView({super.key});
 
@@ -10,7 +9,6 @@ class AddTreeView extends StatefulWidget {
 }
 
 class _AddTreeViewState extends State<AddTreeView> {
-
   final TextEditingController nombreController = TextEditingController();
   final TextEditingController especieController = TextEditingController();
   final TextEditingController alturaController = TextEditingController();
@@ -19,14 +17,11 @@ class _AddTreeViewState extends State<AddTreeView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Agregar árbol"),
-      ),
+      appBar: AppBar(title: const Text("Agregar árbol")),
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-
             TextField(
               controller: nombreController,
               decoration: const InputDecoration(
@@ -68,27 +63,24 @@ class _AddTreeViewState extends State<AddTreeView> {
 
             const SizedBox(height: 25),
 
-
             ElevatedButton(
               onPressed: () {
+                final newTree = Tree(
+                  nombre: nombreController.text,
+                  especie: especieController.text.isEmpty
+                      ? null
+                      : especieController.text,
+                  altura: alturaController.text.isEmpty
+                      ? null
+                      : double.parse(alturaController.text),
+                  frecuenciaRiego: riegoController.text,
+                  ultimoRiego: DateTime.now(),
+                );
 
- final newTree = Tree(
-      nombre: nombreController.text,
-      especie: especieController.text.isEmpty
-          ? null
-          : especieController.text,
-      altura: alturaController.text.isEmpty
-          ? null
-          : double.parse(alturaController.text),
-      frecuenciaRiego: riegoController.text,
-    );
-
-    Navigator.pop(context, newTree);
-
-  },
-  child: const Text("Guardar árbol"),
-            )
-
+                Navigator.pop(context, newTree);
+              },
+              child: const Text("Guardar árbol"),
+            ),
           ],
         ),
       ),
