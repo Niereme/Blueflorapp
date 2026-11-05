@@ -1,30 +1,89 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'dart:convert';
 
 import 'package:blueflora/main.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
+  setUp(() {
+    // Solo memoria: no accede a las preferencias del celular.
+    SharedPreferences.setMockInitialValues({});
+  });
+
+  testWidgets('Abre Inicio y permite navegar entre las cuatro pestañas', (
+    tester,
+  ) async {
+    // Se prueba el widget raíz; main() inicializa servicios nativos aparte.
     await tester.pumpWidget(const Blueflora());
+    await tester.pumpAndSettle();
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    expect(find.byType(BottomNavigationBar), findsOneWidget);
+    expect(
+      tester
+          .widget<BottomNavigationBar>(find.byType(BottomNavigationBar))
+          .items
+          .map((item) => item.label),
+      ['Inicio', 'Árboles', 'Historial', 'Perfil'],
+    );
+    expect(
+      find.descendant(of: find.byType(AppBar), matching: find.text('Inicio')),
+      findsOneWidget,
+    );
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    await tester.tap(find.byIcon(Icons.forest));
+    await tester.pumpAndSettle();
+    expect(find.text('Mis árboles'), findsOneWidget);
+    expect(find.text('Árbol de prueba'), findsOneWidget);
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.history));
+    await tester.pumpAndSettle();
+    expect(
+      find.descendant(
+        of: find.byType(AppBar),
+        matching: find.text('Historial'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Mis árboles'), findsNothing);
+
+    await tester.tap(find.byIcon(Icons.account_circle));
+    await tester.pumpAndSettle();
+    expect(find.text('Perfil'), findsNWidgets(2));
+    expect(
+      find.descendant(
+        of: find.byType(AppBar),
+        matching: find.text('Historial'),
+      ),
+      findsNothing,
+    );
+  });
+
+  testWidgets('Muestra los árboles guardados en el formato local actual', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({
+      'trees': [
+        jsonEncode({
+          'nombre': 'Jacaranda de prueba',
+          'especie': 'Jacaranda mimosifolia',
+          'altura': 2.5,
+          'frecuenciaRiego': '3 días',
+          'ultimoRiego': null,
+        }),
+      ],
+    });
+    await tester.pumpWidget(const Blueflora());
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.forest));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Jacaranda de prueba'), findsOneWidget);
+    expect(find.text('Árbol de prueba'), findsNothing);
+    expect(find.text('Último riego desconocido'), findsOneWidget);
+    expect(
+      find.widgetWithText(ElevatedButton, 'Registrar riego'),
+      findsOneWidget,
+    );
   });
 }

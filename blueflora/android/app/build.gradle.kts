@@ -6,19 +6,18 @@ plugins {
 }
 
 android {
-    coreLibraryDesugaringEnabled true
     namespace = "com.example.blueflora"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
-    isCoreLibraryDesugaringEnabled = true
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
-}
+        isCoreLibraryDesugaringEnabled = true
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
     kotlinOptions {
         jvmTarget = "1.8"
-}
+    }
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
@@ -45,5 +44,5 @@ flutter {
 }
 dependencies {
     // Habilita librerías Java 8 necesarias para flutter_local_notifications
-    coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:2.0.3"
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.3")
 }
