@@ -38,9 +38,9 @@ Se conceden únicamente:
 - EXECUTE sobre siete firmas concretas: auth_register, auth_lookup,
   auth_start_session, auth_access, auth_rotate, auth_logout, auth_attempt.
 
-No hay acceso directo a password_hash, tablas de sesiones, contadores, ni recursos
-de plantas. Esta fase comprueba aislamiento de cuentas; no crea rutas de plantas.
-Los permisos de recursos de plantas se definirán cuando se implemente su API.
+No hay acceso directo a password_hash, tablas de sesiones ni contadores.
+Los permisos específicos sobre recursos se añaden en 0003_resource_permissions
+([resources-api.md](resources-api.md)), sin modificar las políticas de autenticación.
 
 Las funciones SECURITY DEFINER pertenecen al rol de migraciones de la base,
 distinto del API. Usan `search_path=pg_catalog,pg_temp` y referencias a objetos
@@ -148,7 +148,7 @@ python -m uvicorn app.main:create_app --factory --host 127.0.0.1 --port 8000 --n
 ```
 
 Las pruebas anteriores se conservan; la prueba de esquema ahora espera la revisión
-0002_auth. Las nuevas pruebas HTTP usan blueflora_api_test real. Preparan un esquema
+0003_resource_permissions. Las nuevas pruebas HTTP usan blueflora_api_test real. Preparan un esquema
 UUID nuevo en blueflora_test con el rol de migración y conceden USAGE solo sobre
 ese esquema. Para permitir conexiones simultáneas y verificar bloqueo/rotación,
 el DDL temporal debe confirmarse. Al terminar se elimina exclusivamente ese

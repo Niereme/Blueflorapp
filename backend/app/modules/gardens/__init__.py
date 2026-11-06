@@ -1,1 +1,1 @@
-"""Reservado: instalaciones lógicas y límites de pertenencia."""
+"""Jardines lógicos: contratos, reglas, repositorio y rutas autenticadas."""

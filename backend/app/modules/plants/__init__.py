@@ -1,1 +1,1 @@
-"""Reservado: plantas, catálogo species y growth_history."""
+"""Plantas, catálogo y mediciones de crecimiento con aislamiento por propietario."""

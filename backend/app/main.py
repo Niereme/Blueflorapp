@@ -7,6 +7,10 @@ from app.db.connection import DatabaseConfigurationError, create_api_engine
 from app.modules.auth.repository import AuthRepository
 from app.modules.auth.service import AuthService
 from app.modules.auth.router import router as auth_router
+from app.modules.common.repository import ResourceRepository
+from app.modules.gardens.router import router as gardens_router
+from app.modules.plants.router import router as plants_router
+from app.modules.watering.router import router as watering_router
 
 from app.core.config import Settings
 from app.modules.health.router import router as health_router
@@ -25,6 +29,10 @@ def create_app(settings: Settings | None = None, *, auth_service: AuthService | 
     if auth_service is not None or config.api_database_url is not None:
         application.state.auth_service = auth_service or AuthService(AuthRepository(create_api_engine(config)))
         application.include_router(auth_router)
+        if hasattr(application.state.auth_service.repository, 'transaction'):
+            application.state.resource_repository = ResourceRepository(application.state.auth_service.repository)
+            for router in (gardens_router, plants_router, watering_router):
+                application.include_router(router)
 
     @application.exception_handler(RequestValidationError)
     async def validation_error(request: Request, exc: RequestValidationError):
@@ -42,7 +50,7 @@ def create_app(settings: Settings | None = None, *, auth_service: AuthService | 
     @application.middleware("http")
     async def private_responses(request: Request, call_next):
         response = await call_next(request)
-        if request.url.path.startswith('/api/v1/auth/') or request.url.path == '/api/v1/me':
+        if request.url.path.startswith('/api/v1/'):
             response.headers['Cache-Control'] = 'no-store'
             response.headers['Pragma'] = 'no-cache'
         return response

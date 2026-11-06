@@ -85,7 +85,7 @@ def test_initial_migration_matches_models_and_reverses_in_isolation(db):
     c, schema = db
     tables = set(inspect(c).get_table_names(schema=schema))
     assert tables == set(Base.metadata.tables) | {"alembic_version"}
-    assert c.scalar(text(f'SELECT version_num FROM "{schema}".alembic_version')) == "0002_auth"
+    assert c.scalar(text(f'SELECT version_num FROM "{schema}".alembic_version')) == "0003_resource_permissions"
     context = MigrationContext.configure(c, opts={"compare_type": True})
     assert compare_metadata(context, Base.metadata) == []
     config = migration_config(c, schema)

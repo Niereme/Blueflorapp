@@ -1,8 +1,9 @@
-# BlueFlora — Backend, Fase 3.2C
+# BlueFlora — Backend, Fase 3.2D
 
 Base independiente de Flutter con FastAPI y configuración por entorno.
 **Implementado:** `GET /health/live`, configuración validada, pruebas y estructura
-modular, conexión PostgreSQL, modelos, migraciones y autenticación propia.
+modular, conexión PostgreSQL, modelos, migraciones, autenticación propia y API
+de jardines, plantas, especies e historiales.
 **No implementado:**
 sincronización, telemetría, órdenes ni control físico. Los módulos reservados no
 exponen rutas. Autenticación se habilita al configurar la conexión exclusiva del rol API. No se requieren credenciales ni servicios externos para arrancar.
@@ -123,6 +124,8 @@ autenticación crean y retiran únicamente esquemas efímeros propios para proba
 conexiones concurrentes con el rol API real.
 Consulta [docs/authentication.md](docs/authentication.md) para roles, endpoints,
 políticas, rotación y pruebas de autenticación.
+Los contratos, permisos y decisiones de recursos están en
+[docs/resources-api.md](docs/resources-api.md).
 Consulta [docs/database.md](docs/database.md) para configuración, aislamiento,
 migración, verificación y reversión.
 
@@ -133,9 +136,10 @@ migración, verificación y reversión.
 - `app/modules/health/router.py`: liveness independiente.
 - `app/modules/auth/`: registro, login, tokens opacos, refresh, logout y cuenta autenticada.
 - `app/db/`: metadatos, conexión protegida, contexto de propietario y comandos.
-- `migrations/`: `0001_initial` y `0002_auth`, con RLS y funciones de permisos mínimos.
+- `migrations/`: `0001_initial`, `0002_auth` y `0003_resource_permissions`.
 - `app/modules/`: auth, gardens, plants, devices, telemetry, irrigation, watering,
-  sync; modelos en auth, gardens, plants y watering; los demás quedan reservados.
+  sync; auth, gardens, plants y watering incluyen operaciones reales;
+  dispositivos, telemetría, riego físico y sync permanecen reservados.
 - `tests/`: configuración y pruebas pytest.
 - [docs/architecture.md](docs/architecture.md): esquema relacional preliminar,
   cardinalidades, sitios, grupos hidráulicos, crecimiento y seguridad.

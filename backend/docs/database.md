@@ -7,7 +7,8 @@ Python 3.14.4, PostgreSQL local 18.6, SQLAlchemy 2.1.8, Psycopg 3.3.8
 versiones reproducibles en `requirements.lock`. No se instala nada globalmente.
 Esta entrega no modifica Flutter ni conecta su almacenamiento a PostgreSQL.
 La Fase 3.2C añade autenticación opcional con un rol de ejecución separado;
-consulta [authentication.md](authentication.md). No hay sincronización.
+consulta [authentication.md](authentication.md). Fase 3.2D añade la API y
+permisos DML específicos ([resources-api.md](resources-api.md)). No hay sincronización.
 
 ## Recursos locales y creación inicial
 
@@ -69,7 +70,7 @@ con su propio rol de migración; nunca comparte el rol API ni las credenciales. 
 bases ni roles, no inserta semillas y no se ejecuta al arrancar FastAPI. Incluye
 las seis tablas y `alembic_version`. Las operaciones DDL son transaccionales;
 una colisión con tablas existentes falla, sin reemplazarlas. Un segundo upgrade
-es un no-op. `current` debe mostrar `0002_auth (head)` y `check-schema` debe
+es un no-op. `current` debe mostrar `0003_resource_permissions (head)` y `check-schema` debe
 indicar que no hay operaciones pendientes respecto de los modelos.
 
 Alternativa estándar desde backend: `python -m alembic upgrade head`,

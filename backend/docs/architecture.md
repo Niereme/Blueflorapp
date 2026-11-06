@@ -1,10 +1,12 @@
-# Arquitectura aprobada y decisiones de diseño — Fases 3.2A/3.2B/3.2C
+# Arquitectura aprobada y decisiones de diseño — Fases 3.2A/3.2B/3.2C/3.2D
 
 Este documento describe el destino de la arquitectura. En Fase 3.2B se implementan
 solo users, gardens, species, plants, growth_history y watering_events con
 PostgreSQL/SQLAlchemy/Alembic; los detalles efectivos están en [database.md](database.md).
 Fase 3.2C añade autenticación, sesiones, límites de intentos y separación de roles
-([authentication.md](authentication.md)). El resto sigue siendo diseño: no hay
+([authentication.md](authentication.md)). Fase 3.2D añade la API REST de
+jardines, plantas, especies y registros históricos ([resources-api.md](resources-api.md)).
+El resto sigue siendo diseño: no hay
 sincronización, agentes Raspberry Pi ni accionamiento de salidas. Liveness sigue
 independiente de la conexión PostgreSQL.
 

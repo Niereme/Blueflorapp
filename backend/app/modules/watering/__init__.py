@@ -1,1 +1,1 @@
-"""Reservado: registros manuales e historial, separados de órdenes físicas."""
+"""Historial y registro manual de riego; no controla hardware."""
