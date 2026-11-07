@@ -5,6 +5,7 @@ import 'package:blueflora/domain/plant_snapshot.dart';
 import 'package:blueflora/domain/watering_event.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'tree_repository.dart';
+import '../domain/local_mutation.dart';
 
 /// Frontera de almacenamiento para probar fallos sin acceder al dispositivo.
 abstract class TreePreferencesStore {
@@ -49,6 +50,7 @@ class LocalTreeRepository extends TreeRepository {
   final TreePreferencesStore _store;
   Future<void> _pending = Future<void>.value();
   bool _loaded = false;
+  PlantSnapshot? _snapshot;
   List<WateringEvent> _events = [];
 
   Future<T> _serialize<T>(Future<T> Function() operation) {
@@ -99,6 +101,7 @@ class LocalTreeRepository extends TreeRepository {
           if (needsUpgrade) await _write(snapshot);
         }
       }
+      _snapshot = snapshot;
       _events = List.of(snapshot?.events ?? []);
       _loaded = true;
       return snapshot;
@@ -109,6 +112,42 @@ class LocalTreeRepository extends TreeRepository {
       );
     }
   });
+
+  LocalMutation? _pendingMutation;
+  PlantSnapshot? _pendingSnapshot;
+
+  @override
+  Future<PlantSnapshot> applyMutation(LocalMutation mutation) =>
+      _serialize(() async {
+        try {
+          if (mutation.spaceId != spaceId) {
+            throw StateError('Espacio incorrecto.');
+          }
+          if (_pendingMutation?.operationId == mutation.operationId &&
+              _pendingMutation!.identityJson != mutation.identityJson) {
+            throw StateError('operation_id_reused');
+          }
+          if (!_loaded) throw StateError('Debes cargar antes de guardar.');
+          final current = _snapshot ?? PlantSnapshot(trees: []);
+          final next = _pendingMutation?.operationId == mutation.operationId
+              ? _pendingSnapshot!
+              : applyLegacyMutation(current, mutation);
+          _pendingMutation = mutation;
+          _pendingSnapshot = next;
+          await _write(next);
+          _snapshot = next;
+          _events = List.of(next.events);
+          _pendingMutation = null;
+          _pendingSnapshot = null;
+          return next;
+        } catch (error) {
+          if (error is TreeStorageException) rethrow;
+          throw TreeStorageException(
+            'No se pudieron guardar los cambios. Inténtalo de nuevo.',
+            error,
+          );
+        }
+      });
 
   Future<void> _write(PlantSnapshot snapshot) async {
     // Una única sustitución del valor de preferencias: nunca escribir las dos
@@ -134,6 +173,7 @@ class LocalTreeRepository extends TreeRepository {
           events: eventCopy ?? _events,
         );
         await _write(snapshot);
+        _snapshot = snapshot;
         _events = List.of(snapshot.events);
       } catch (error) {
         throw TreeStorageException(

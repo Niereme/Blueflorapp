@@ -1,11 +1,25 @@
-# BlueFlora — transición técnica v0.3.3
+# BlueFlora — transición técnica E.3
 
-Fecha de cierre autorizada: 2026-11-07, America/Mexico_City.
-**Fase 3.2E.2 cerrada por el usuario. No comenzar 3.2E.3 sin nueva autorización.**
+Estado al 2026-11-07, America/Mexico_City: **implementación local A/B/C y validación
+Android de 3.2E.3 completadas; cierre E.3 autorizado por el usuario**.
+Hito Git v0.3.4, sin tags ni releases y sin cambiar versiones internas.
+La autorización de commit y push se limita a los 14 archivos revisados de E.3.
+E.4 no se inició y no está autorizada. Flutter sigue sin HTTP, login,
+cuentas, tokens ni sincronización.
+
+El commit anterior es f168da0e1f7e20612fed42a9dd10f97c43db7ce2, BlueFlora v0.3.3
+(cierre E.2). El cierre E.3 se identifica por el mensaje exacto:
+BlueFlora v0.3.4 - Cola local persistente y proyeccion SQLite.
+Consultar git log -1 --format='%H %s' y verificar publicación contra origin/main.
+
+- [Esquema físico v2 y garantías E.3](../blueflora/docs/local-outbox.md).
+- [Validación física E.3](../blueflora/docs/android-outbox-validation-results.md).
+- Las secciones 1–8 conservan el antecedente E.2; el estado actual está en §9.
+
 Este archivo es el punto de entrada para nuevas conversaciones ChatGPT/Codex.
 Las reglas permanentes del repositorio están en [`../AGENTS.md`](../AGENTS.md).
 
-## 1. Estado y arquitectura real
+## 1. Estado y arquitectura real al cierre E.2
 
 Repositorio único: `blueflora/` contiene Flutter; `backend/` contiene la API Python
 independiente. La versión v0.3.3 identifica el cierre en Git; no se modificaron
@@ -50,12 +64,13 @@ integraciones de hardware implementadas. No hay Firebase ni Supabase como backen
 | 3.2D | Jardines, plantas, catálogo e historiales REST; 158 pruebas backend al cierre |
 | 3.2E.1 | Contratos/invariantes/esquema objetivo de sincronización; documentación, no motor sync |
 | 3.2E.2 | SQLite anónimo, migración local y recuperación; 299 pruebas Flutter, APK y validación física |
+| 3.2E.3 | A/B/C local, SQLite v2 y validación Android completados; 319 pruebas; cierre autorizado |
 
-El commit anterior a este cierre es `321f9d2` (v0.3.2, diseño offline-first).
-Para identificar el cierre actual: `git log -1 --format='%H %s'`. Su mensaje es
-`BlueFlora v0.3.3 - SQLite y migracion local offline`.
+El commit anterior al cierre E.2 es `321f9d2` (v0.3.2, diseño offline-first).
+El cierre E.2 corresponde a `f168da0`, con mensaje
+`BlueFlora v0.3.3 - SQLite y migracion local offline`; el cierre E.3 está en §9.
 
-## 3. Persistencia y reglas que deben conservarse
+## 3. Persistencia E.2 y reglas que deben conservarse
 
 SQLite v1 contiene siete tablas: `local_spaces` (solo anónimo), `storage_state`,
 `recovery_backups`, `migration_runs`, `plant_references`, `plants`, `watering_events`.
@@ -213,7 +228,7 @@ restauración omite simultáneamente DB y comprobante, no puede demostrarse usan
 solo preferencias si existió una base más reciente: no prometer recuperación total.
 Los marcadores/respaldos no son una cola durable de operaciones.
 
-## 8. Próximo paso recomendado, todavía NO autorizado
+## 8. Antecedente del siguiente paso al cerrar E.2
 
 Según E.1, **3.2E.3: cola durable, proyección local y espacios**. Primero revisar
 el código ya cerrado, los invariantes y el esquema objetivo; proponer el alcance
@@ -227,3 +242,71 @@ y recordatorios actuales, sin pérdidas ni retornos a snapshots antiguos.
 Para reanudar una conversación, aportar este archivo y especificar la subfase y
 alcance autorizados. Revisar AGENTS.md y Git antes de editar; no inferir permiso
 de implementación de este resumen ni del cierre del commit anterior.
+
+## 9. Estado actual E.3 y cierre autorizado
+
+Implementación y validación completadas. La fábrica Android abre user_version=2
+en la misma ruta blueflora_anonymous_v1.sqlite, manteniendo database_id y guardia.
+Las siete tablas E.2 permanecen; se añaden prior_state_records, outbox,
+outbox_dependencies y local_diagnostics. Las capturas previas conservan las filas
+originales fuera de la cola. Solo nuevas intenciones explícitas generan comandos
+local_only; modificación, evento, comando, dependencias y contadores comparten COMMIT.
+Se rechaza save(snapshot) en SQLite; su ruta privada se reserva a incorporación
+antes de activar. No hay fallback a preferencias antiguas tras la activación.
+
+Revisión global y versión de planta se comprueban en la transacción. Un reintento
+confirmado se reconoce antes de rechazar su revisión antigua y devuelve la proyección
+vigente. Se conserva la identidad/payload del intento. Baselines ambiguos o con
+discrepancias mantienen comportamiento E.2 con diagnóstico, sin convertir zonas;
+las plantas comparables no retroceden con un evento anterior. Se conservan UUID,
+historial tras borrado, respaldos y períodos de 86400 segundos.
+
+Solo Android activa SQLite y únicamente se habilita el anónimo actual; espacios
+adicionales son sintéticos en pruebas temporales. SharedPreferences sigue en otros
+destinos sin atribuirle garantías de outbox durable. Backend FastAPI/PostgreSQL,
+autenticación, RLS, dependencias, herramientas y backup Android no cambiaron.
+La documentación E.1 registra la adaptación de capturas fuera del outbox.
+
+### Evidencia automatizada de la implementación
+
+- flutter analyze --no-pub: sin incidencias.
+- bash tool/test_local_storage.sh --reporter expanded: 319 pruebas aprobadas
+  (299 anteriores y 20 adicionales; adaptación explícita de un reintento pendiente).
+- flutter build web --no-pub: correcto.
+- APK debug compilado con ORG_GRADLE_PROJECT_android.builder.sdkDownload=false.
+- Avisos de soporte futuro Gradle/AGP/Kotlin; ninguna actualización realizada.
+
+Estas ejecuciones pertenecen a la implementación. No se repitieron suites ni
+compilaciones durante la validación física ni en esta preparación documental.
+Las 158 pruebas backend siguen siendo el antecedente de 3.2D, no ejecución nueva.
+
+### Evidencia física Android posterior
+
+RMX5111, Android 16/API 36, paquete com.example.blueflora. Firma compatible y
+actualización -r conservando datos; APK instalado idéntico al verificado. Se observó
+migración real v1 → v2: 3 plantas activas, 1 eliminada, 4 referencias y 5 eventos
+preservados; 13 capturas y cero comandos históricos. Crear, editar, registrar un
+riego manual y eliminar una planta de prueba confirmó cuatro comandos local_only,
+secuencias 1–4 y tres dependencias. Revisión global 4 → 8.
+
+Tras detener/reabrir: 3 activas, 2 eliminadas, 5 referencias, 6 eventos, 13 capturas
+y cuatro comandos idénticos, sin duplicados. Historial conservado con nombre y
+etiqueta Planta eliminada. Identidad, guardia, fechas, originales, preferencias
+y respaldos preservados. Integridad ok y cero errores FK en las copias coherentes.
+Configuración de recordatorios conservada; entrega física de notificación no
+comprobada. No se probaron corrupción, falta de espacio, cortes eléctricos,
+restauraciones ni reinicio completo de Android. No ampliar las garantías FFI a
+esos escenarios. Ver el informe físico enlazado para procedimiento y límites.
+
+### Cierre Git autorizado y siguiente límite
+
+El usuario autorizó el commit de los 14 archivos revisados y push normal a
+origin/main con el mensaje exacto:
+BlueFlora v0.3.4 - Cola local persistente y proyeccion SQLite.
+El resultado de publicación debe verificarse contra main remoto; no usar force,
+merge ni rebase automático si el remoto avanzó o rechaza el push.
+.vscode/ permanece fuera; no incluir secretos, bases, respaldos privados, capturas
+ni builds. No se modificaron pubspec ni versiones internas; no hay tags ni releases.
+No se repitieron pruebas ni compilaciones por los ajustes documentales de cierre.
+E.4 no se inició y requiere autorización independiente. Cuentas móviles, HTTP,
+PostgreSQL/CAS y motor sync siguen fuera de esta entrega y sin iniciar.

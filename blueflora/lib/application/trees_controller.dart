@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:blueflora/data/local_tree_repository.dart';
 import 'package:blueflora/data/tree_repository.dart';
 import 'package:blueflora/domain/tree.dart';
+import 'package:blueflora/domain/local_mutation.dart';
 import 'package:blueflora/domain/watering_event.dart';
 import 'package:blueflora/domain/watering_summary.dart';
 import 'package:flutter/widgets.dart';
@@ -34,9 +35,9 @@ class TreesController extends ChangeNotifier with WidgetsBindingObserver {
   String? _loadError;
   String? _saveError;
   List<Tree> _trees = [];
-  List<Tree>? _failedSave;
+  LocalMutation? _failedMutation;
+  LocalMutation? _initialMutation;
   List<WateringEvent> _events = [];
-  List<WateringEvent>? _failedEvents;
 
   List<Tree> get trees => List.unmodifiable(_trees);
   Tree? plantById(String id) {
@@ -69,7 +70,10 @@ class TreesController extends ChangeNotifier with WidgetsBindingObserver {
       !_saving &&
       _loadError == null &&
       _repository.writable;
-  bool get canRetrySave => canModify && _failedSave != null;
+
+  /// Conservada sin reajustar revisiones para reconciliación explícita.
+  LocalMutation? get pendingMutation => _failedMutation ?? _initialMutation;
+  bool get canRetrySave => canModify && _failedMutation != null;
   WateringSummary get summary => WateringSummary(_trees, _now);
 
   void _emit() {
@@ -81,23 +85,25 @@ class TreesController extends ChangeNotifier with WidgetsBindingObserver {
     _loading = true;
     _loadError = null;
     _saveError = null;
-    _failedSave = null;
-    _failedEvents = null;
+
     _emit();
     try {
-      final snapshot = await _repository.loadSnapshot();
+      var snapshot = await _repository.loadSnapshot();
       var trees = snapshot?.trees;
       if (_disposed) return false;
-      if (trees == null) {
-        trees = [
-          Tree(
+      if (trees == null || _initialMutation != null) {
+        _initialMutation ??= () {
+          final demo = Tree(
             nombre: 'Árbol de prueba',
             especie: 'Pino de Bosque',
             altura: 4,
             frecuenciaRiegoDias: 3,
-          ),
-        ];
-        await _repository.save(trees);
+          );
+          return _intent('plant.create', demo.id, demo.toJson());
+        }();
+        snapshot = await _repository.applyMutation(_initialMutation!);
+        trees = snapshot.trees;
+        _initialMutation = null;
       }
       if (_disposed) return false;
       _trees = List.of(trees);
@@ -117,26 +123,36 @@ class TreesController extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
-  Future<bool> _save(List<Tree> next, {List<WateringEvent>? events}) async {
-    final nextEvents = List<WateringEvent>.of(events ?? _events);
+  LocalMutation _intent(
+    String action,
+    String id,
+    Map<String, Object?> payload,
+  ) => LocalMutation(
+    spaceId: _repository.spaceId,
+    action: action,
+    entityId: id,
+    expectedRevision: _repository.revision,
+    expectedVersion: _repository.versionOf(id),
+    payload: payload,
+  );
+
+  Future<bool> _save(LocalMutation mutation) async {
     if (!canModify) return false;
     _saving = true;
     _saveError = null;
-    _failedSave = null;
-    _failedEvents = null;
     _emit();
     try {
-      await _repository.save(next, events: nextEvents);
+      final snapshot = await _repository.applyMutation(mutation);
       if (_disposed) return false;
-      _trees = List.of(next);
-      _events = nextEvents;
+      _trees = List.of(snapshot.trees);
+      _events = List.of(snapshot.events);
+      _failedMutation = null;
       _now = _clock();
       return true;
     } on TreeStorageException catch (error) {
       if (!_disposed) {
         _saveError = error.message;
-        _failedSave = List.of(next);
-        _failedEvents = nextEvents;
+        _failedMutation = mutation;
       }
       return false;
     } finally {
@@ -149,59 +165,61 @@ class TreesController extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   Future<bool> add(Tree tree) {
-    if (!canModify || _trees.any((item) => item.id == tree.id)) {
+    if (!canModify ||
+        _failedMutation != null ||
+        _trees.any((item) => item.id == tree.id)) {
       return Future.value(false);
     }
-    return _save([..._trees, tree]);
+    return _save(_intent('plant.create', tree.id, tree.toJson()));
   }
 
   Future<bool> edit(Tree tree) {
-    if (!canModify || !_trees.any((item) => item.id == tree.id)) {
+    final old = plantById(tree.id);
+    if (!canModify || _failedMutation != null || old == null) {
       return Future.value(false);
     }
-    return _save(
-      _trees
-          .map(
-            (item) => item.id == tree.id
-                ? tree.copyWith(ultimoRiego: item.ultimoRiego)
-                : item,
-          )
-          .toList(),
-    );
+    final before = old.toJson();
+    final after = tree.toJson();
+    final patch = <String, Object?>{};
+    for (final key in ['nombre', 'especie', 'altura', 'frecuenciaRiegoDias']) {
+      if (before[key] != after[key]) patch[key] = after[key];
+    }
+    return _save(_intent('plant.update', tree.id, patch));
   }
 
   Future<bool> delete(String id) {
-    if (!canModify || !_trees.any((item) => item.id == id)) {
+    if (!canModify || _failedMutation != null || plantById(id) == null) {
       return Future.value(false);
     }
-    return _save(_trees.where((item) => item.id != id).toList());
+    return _save(_intent('plant.delete', id, {}));
   }
 
   Future<bool> water(String id) {
     if (!canModify) return Future.value(false);
-    final index = _trees.indexWhere((item) => item.id == id);
-    if (index == -1) return Future.value(false);
-    // Un fallo pendiente se reintenta con el mismo ID y la misma fecha.
-    if (_failedEvents != null &&
-        _failedEvents!.length == _events.length + 1 &&
-        _failedEvents!.last.plantId == id) {
-      return retrySave();
+    final pending = _failedMutation;
+    if (pending != null) {
+      return pending.action == 'watering_event.append' && pending.entityId == id
+          ? retrySave()
+          : Future.value(false);
     }
-    final tree = _trees[index];
+    final tree = plantById(id);
+    if (tree == null) return Future.value(false);
     final timestamp = _clock();
     final event = WateringEvent(
       plantId: id,
       plantName: tree.nombre,
       occurredAt: timestamp,
     );
-    final next = List<Tree>.of(_trees);
-    next[index] = tree.copyWith(ultimoRiego: timestamp);
-    return _save(next, events: [..._events, event]);
+    return _save(
+      _intent('watering_event.append', id, {
+        ...event.toJson(),
+        'declarationText': timestamp.toIso8601String(),
+      }),
+    );
   }
 
-  Future<bool> retrySave() => canRetrySave
-      ? _save(List.of(_failedSave!), events: List.of(_failedEvents!))
-      : Future.value(false);
+  Future<bool> retrySave() =>
+      canRetrySave ? _save(_failedMutation!) : Future.value(false);
 
   /// No relee preferencias ni escribe datos: solo recalcula el estado temporal.
   void refreshTime() {

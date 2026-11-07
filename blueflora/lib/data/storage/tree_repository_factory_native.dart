@@ -32,11 +32,41 @@ Future<native.Database> openNativePlantDatabase(String path) {
   return factory.openDatabase(
     path,
     options: native.OpenDatabaseOptions(
-      version: 1,
+      version: 2,
+      onUpgrade: SqliteTreeRepository.upgradeSchema,
       onConfigure: SqliteTreeRepository.configure,
       onCreate: SqliteTreeRepository.createSchema,
     ),
   );
+}
+
+/// Conserva la comprobación E.2 al abrir/actualizar la misma base.
+Future<native.Database> openIdentifiedPlantDatabase(String path) async {
+  final file = File(path);
+  final receipt = File('${file.path}.activation-guard');
+  // Si el sistema restauró únicamente una parte de la base activa, fallar
+  // cerrado en vez de migrar silenciosamente las preferencias obsoletas.
+  if (await receipt.exists() && !await file.exists()) {
+    throw StateError('Falta la base SQLite de una instalación ya preparada.');
+  }
+  final db = await openNativePlantDatabase(file.path);
+  try {
+    final identity =
+        (await db.query('storage_state')).single['database_id'] as String;
+    if (await receipt.exists()) {
+      if (await receipt.readAsString() != identity) {
+        throw StateError(
+          'La base no corresponde al comprobante de esta instalación.',
+        );
+      }
+    } else {
+      await receipt.writeAsString(identity, flush: true);
+    }
+  } catch (_) {
+    await db.close();
+    rethrow;
+  }
+  return db;
 }
 
 TreeRepository createTreeRepository() {
@@ -57,36 +87,13 @@ TreeRepository createTreeRepository() {
     ),
   );
   return SqliteTreeRepository(
+    spaceId: 'anonymous',
     openDatabase: () async {
       final dir = await directory();
       await dir.create(recursive: true);
-      final file = File(p.join(dir.path, 'blueflora_anonymous_v1.sqlite'));
-      final receipt = File('${file.path}.activation-guard');
-      // Si el sistema restauró únicamente una parte de la base activa, fallar
-      // cerrado en vez de migrar silenciosamente las preferencias obsoletas.
-      if (await receipt.exists() && !await file.exists()) {
-        throw StateError(
-          'Falta la base SQLite de una instalación ya preparada.',
-        );
-      }
-      final db = await openNativePlantDatabase(file.path);
-      try {
-        final identity =
-            (await db.query('storage_state')).single['database_id'] as String;
-        if (await receipt.exists()) {
-          if (await receipt.readAsString() != identity) {
-            throw StateError(
-              'La base no corresponde al comprobante de esta instalación.',
-            );
-          }
-        } else {
-          await receipt.writeAsString(identity, flush: true);
-        }
-      } catch (_) {
-        await db.close();
-        rethrow;
-      }
-      return db;
+      return openIdentifiedPlantDatabase(
+        p.join(dir.path, 'blueflora_anonymous_v1.sqlite'),
+      );
     },
     source: SharedPreferencesTreeStore(),
     backups: backups,

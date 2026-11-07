@@ -5,12 +5,16 @@ import 'package:blueflora/application/trees_controller.dart';
 import 'package:blueflora/data/local_tree_repository.dart';
 import 'package:blueflora/data/storage/file_migration_backup.dart';
 import 'package:blueflora/data/storage/migration_source.dart';
+import 'package:blueflora/data/storage/local_schema_v2.dart';
+import 'package:blueflora/data/storage/tree_repository_factory_native.dart'
+    as native_store;
 import 'package:blueflora/data/storage/sqlite_tree_repository.dart';
 import 'package:blueflora/data/storage/storage_platform_policy.dart';
 import 'package:blueflora/data/storage/tree_repository_factory_stub.dart'
     as web;
 import 'package:blueflora/domain/plant_snapshot.dart';
 import 'package:blueflora/domain/tree.dart';
+import 'package:blueflora/domain/local_mutation.dart';
 import 'package:blueflora/domain/watering_event.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -47,7 +51,8 @@ void main() {
     final db = await databaseFactoryFfi.openDatabase(
       '${directory.path}/plants.sqlite',
       options: OpenDatabaseOptions(
-        version: 1,
+        version: 2,
+        onUpgrade: SqliteTreeRepository.upgradeSchema,
         singleInstance: false,
         onConfigure: SqliteTreeRepository.configure,
         onCreate: SqliteTreeRepository.createSchema,
@@ -59,6 +64,7 @@ void main() {
 
   SqliteTreeRepository repository({StorageCheckpoint? checkpoint}) =>
       SqliteTreeRepository(
+        spaceId: 'anonymous',
         openDatabase: open,
         source: source,
         backups: backups,
@@ -78,6 +84,31 @@ void main() {
     opened.clear();
     await directory.delete(recursive: true);
   });
+
+  LocalMutation intent(
+    SqliteTreeRepository target,
+    String action,
+    String id,
+    Map<String, Object?> payload,
+  ) => LocalMutation(
+    spaceId: 'anonymous',
+    action: action,
+    entityId: id,
+    payload: payload,
+    expectedRevision: target.revision,
+    expectedVersion: target.versionOf(id),
+  );
+
+  Future<void> update(SqliteTreeRepository target, Tree value) async {
+    await target.applyMutation(
+      intent(target, 'plant.update', value.id, {
+        'nombre': value.nombre,
+        'especie': value.especie,
+        'altura': value.altura,
+        'frecuenciaRiegoDias': value.frecuenciaRiegoDias,
+      }),
+    );
+  }
 
   void seed({List<WateringEvent>? events}) {
     source.records = [
@@ -126,7 +157,10 @@ void main() {
     'Ausente y vacío son distintos, sin inventar plantas ni eventos',
     () async {
       expect(await repo.loadSnapshot(), isNull);
-      await repo.save([]);
+      await repo.applyMutation(
+        intent(repo, 'plant.create', tree.id, tree.toJson()),
+      );
+      await repo.applyMutation(intent(repo, 'plant.delete', tree.id, {}));
       expect((await repo.loadSnapshot())!.trees, isEmpty);
       expect(source.records, isNull);
     },
@@ -200,13 +234,16 @@ void main() {
         especie: null,
         altura: null,
       );
-      await repo.save([edited], events: [event]);
+      await update(repo, edited);
+      await repo.applyMutation(
+        intent(repo, 'watering_event.append', tree.id, event.toJson()),
+      );
       await repo.close();
       final next = repository();
       final snapshot = (await next.loadSnapshot())!;
       expect(snapshot.trees.single.toJson(), edited.toJson());
       expect(snapshot.events.single.toJson(), event.toJson());
-      await next.save([]);
+      await next.applyMutation(intent(next, 'plant.delete', tree.id, {}));
       final deleted = (await repository().loadSnapshot())!;
       expect(deleted.trees, isEmpty);
       expect(deleted.events.single.plantId, tree.id);
@@ -249,7 +286,15 @@ void main() {
     source.records = [];
     await repo.loadSnapshot();
     final second = Tree(nombre: tree.nombre, frecuenciaRiegoDias: 2);
-    await repo.save([tree, second], events: [event]);
+    await repo.applyMutation(
+      intent(repo, 'plant.create', tree.id, tree.toJson()),
+    );
+    await repo.applyMutation(
+      intent(repo, 'plant.create', second.id, second.toJson()),
+    );
+    await repo.applyMutation(
+      intent(repo, 'watering_event.append', tree.id, event.toJson()),
+    );
     final snapshot = (await repository().loadSnapshot())!;
     expect(snapshot.trees.map((t) => t.id), [tree.id, second.id]);
     expect(snapshot.events.single.plantId, tree.id);
@@ -268,17 +313,28 @@ void main() {
         );
         await failing.loadSnapshot();
         final watered = tree.copyWith(ultimoRiego: DateTime.utc(2026, 11, 6));
+        final newEvent = WateringEvent(
+          plantId: tree.id,
+          plantName: tree.nombre,
+          occurredAt: watered.ultimoRiego!,
+        );
+        final mutation = intent(
+          failing,
+          'watering_event.append',
+          tree.id,
+          newEvent.toJson(),
+        );
         fail = true;
         await expectLater(
-          failing.save([watered], events: [event]),
+          failing.applyMutation(mutation),
           throwsA(isA<TreeStorageException>()),
         );
         final saved = (await repository().loadSnapshot())!;
         expect(saved.trees.single.toJson(), tree.toJson());
         expect(saved.events, isEmpty);
         fail = false;
-        await failing.save([watered], events: [event]);
-        await failing.save([watered], events: [event]);
+        await failing.applyMutation(mutation);
+        await failing.applyMutation(mutation);
         final finalState = (await repository().loadSnapshot())!;
         expect(finalState.events, hasLength(1));
         expect(finalState.trees.single.ultimoRiego, watered.ultimoRiego);
@@ -291,9 +347,9 @@ void main() {
     final second = repository();
     await repo.loadSnapshot();
     await second.loadSnapshot();
-    await repo.save([tree.copyWith(nombre: 'Confirmado')]);
+    await update(repo, tree.copyWith(nombre: 'Confirmado'));
     await expectLater(
-      second.save([tree]),
+      update(second, tree),
       throwsA(isA<TreeStorageException>()),
     );
     expect((await second.loadSnapshot())!.trees.single.nombre, 'Confirmado');
@@ -302,7 +358,7 @@ void main() {
   test('No lee preferencias obsoletas después de activación', () async {
     seed();
     await repo.loadSnapshot();
-    await repo.save([tree.copyWith(nombre: 'SQLite reciente')]);
+    await update(repo, tree.copyWith(nombre: 'SQLite reciente'));
     source.readError = StateError('preferencias no disponibles');
     expect(
       (await repository().loadSnapshot())!.trees.single.nombre,
@@ -336,7 +392,9 @@ void main() {
       occurredAt: event.occurredAt,
     );
     await expectLater(
-      repo.save([tree], events: [changed, orphan]),
+      repo.applyMutation(
+        intent(repo, 'watering_event.append', tree.id, changed.toJson()),
+      ),
       throwsA(isA<TreeStorageException>()),
     );
     expect((await repo.loadSnapshot())!.events.first.toJson(), event.toJson());
@@ -544,4 +602,547 @@ void main() {
       );
     }
   });
+  test(
+    'V2 captura estado previo sin comandos y no duplica al reabrir',
+    () async {
+      seed();
+      await repo.loadSnapshot();
+      final db = opened.last;
+      final captures = await db.query('prior_state_records');
+      expect(captures, hasLength(5)); // planta + dos referencias + dos eventos
+      expect(await db.query('outbox'), isEmpty);
+      for (final row in captures) {
+        expect(row['sha256'], localHash(row['row_json'] as String));
+        expect(row['source_kind'], 'preferences_import');
+      }
+      await repository().loadSnapshot();
+      expect(await db.query('prior_state_records'), captures);
+      await expectLater(
+        db.update('prior_state_records', {'source_kind': 'sqlite_v1'}),
+        throwsA(isA<DatabaseException>()),
+      );
+    },
+  );
+
+  test('V1 a V2 conserva identidad, eliminadas, eventos y respaldo', () async {
+    final path = '${directory.path}/plants.sqlite';
+    final old = await databaseFactoryFfi.openDatabase(
+      path,
+      options: OpenDatabaseOptions(
+        version: 1,
+        singleInstance: false,
+        onConfigure: SqliteTreeRepository.configure,
+        onCreate: SqliteTreeRepository.createSchema,
+      ),
+    );
+    final identity = (await old.query('storage_state')).single['database_id'];
+    await old.insert('plant_references', {
+      'space_id': 'anonymous',
+      'id': tree.id,
+    });
+    await old.insert('plant_references', {
+      'space_id': 'anonymous',
+      'id': orphan.plantId,
+    });
+    await old.insert('plants', {
+      'space_id': 'anonymous',
+      'id': tree.id,
+      'position': 0,
+      'name': tree.nombre,
+      'species_label': tree.especie,
+      'initial_height_m': tree.altura,
+      'watering_frequency_days': 3,
+      'last_watered_text': '2026-10-24T12:35:46.123456',
+      'date_kind': 'local_unzoned',
+      'deleted': 1,
+    });
+    await old.insert('watering_events', {
+      'space_id': 'anonymous',
+      'id': orphan.id,
+      'plant_ref_id': orphan.plantId,
+      'position': 0,
+      'plant_name_snapshot': orphan.plantName,
+      'occurred_at': orphan.occurredAt.toIso8601String(),
+      'event_type': 'manual_registration',
+    });
+    await old.insert('recovery_backups', {
+      'hash': 'preserved',
+      'envelope': 'original',
+    });
+    await old.update('storage_state', {
+      'active': 1,
+      'initialized': 1,
+      'revision': 7,
+    }, where: 'id=1');
+    final originalPlants = await old.query('plants');
+    await old.close();
+    final loaded = (await repo.loadSnapshot())!;
+    expect(loaded.trees, isEmpty);
+    expect(loaded.events.single.id, orphan.id);
+    final db = opened.last;
+    final state = (await db.query('storage_state')).single;
+    expect(state['database_id'], identity);
+    expect(state['revision'], 7);
+    expect(state['e3_ready'], 1);
+    expect((await db.query('recovery_backups')).single['envelope'], 'original');
+    final capture = (await db.query(
+      'prior_state_records',
+      where: "record_kind='plants'",
+    )).single;
+    expect(jsonDecode(capture['row_json'] as String), originalPlants.single);
+    expect(capture['source_kind'], 'sqlite_v1');
+    expect((await db.query('plants')).single['projection_mode'], 'legacy_hold');
+    expect(await db.query('outbox'), isEmpty);
+  });
+
+  for (final stage in ['v2_schema', 'v2_verified']) {
+    test('Migración física rollback completo en $stage', () async {
+      final path = '${directory.path}/plants.sqlite';
+      final old = await databaseFactoryFfi.openDatabase(
+        path,
+        options: OpenDatabaseOptions(
+          version: 1,
+          singleInstance: false,
+          onConfigure: SqliteTreeRepository.configure,
+          onCreate: SqliteTreeRepository.createSchema,
+        ),
+      );
+      final state = await old.query('storage_state');
+      await old.close();
+      await expectLater(
+        databaseFactoryFfi.openDatabase(
+          path,
+          options: OpenDatabaseOptions(
+            version: 2,
+            singleInstance: false,
+            onConfigure: SqliteTreeRepository.configure,
+            onUpgrade: (db, a, b) => upgradeLocalV2(
+              db,
+              checkpoint: (name) async {
+                if (name == stage) throw StateError('corte');
+              },
+            ),
+          ),
+        ),
+        throwsA(anything),
+      );
+      final recovered = await databaseFactoryFfi.openDatabase(
+        path,
+        options: OpenDatabaseOptions(
+          version: 1,
+          singleInstance: false,
+          onConfigure: SqliteTreeRepository.configure,
+        ),
+      );
+      expect(await recovered.getVersion(), 1);
+      expect(await recovered.query('storage_state'), state);
+      expect(
+        await recovered.query('sqlite_master', where: "name='outbox'"),
+        isEmpty,
+      );
+      await recovered.close();
+      expect(await repo.loadSnapshot(), isNull);
+    });
+  }
+
+  test(
+    'Respuesta perdida y retry antiguo conservan proyección posterior',
+    () async {
+      seed(events: []);
+      var lose = true;
+      final target = repository(
+        checkpoint: (name) async {
+          if (name == 'after_save_commit' && lose) {
+            throw StateError('respuesta perdida');
+          }
+        },
+      );
+      await target.loadSnapshot();
+      final command = intent(
+        target,
+        'watering_event.append',
+        tree.id,
+        event.toJson(),
+      );
+      await expectLater(
+        target.applyMutation(command),
+        throwsA(isA<TreeStorageException>()),
+      );
+      final later = repository();
+      await later.loadSnapshot();
+      await update(later, tree.copyWith(nombre: 'Posterior'));
+      lose = false;
+      final current = await target.applyMutation(command);
+      expect(current.trees.single.nombre, 'Posterior');
+      expect(current.events, hasLength(1));
+      expect(await opened.last.query('outbox'), hasLength(2));
+      expect(target.revision, 2);
+      final incompatible = LocalMutation(
+        operationId: command.operationId,
+        spaceId: 'anonymous',
+        action: command.action,
+        entityId: tree.id,
+        expectedRevision: command.expectedRevision,
+        expectedVersion: command.expectedVersion,
+        payload: {...command.payload, 'plantName': 'otro'},
+      );
+      await expectLater(
+        target.applyMutation(incompatible),
+        throwsA(
+          isA<TreeStorageException>().having(
+            (e) => e.cause.toString(),
+            'cause',
+            contains('operation_id_reused'),
+          ),
+        ),
+      );
+    },
+  );
+
+  for (final stage in [
+    'event_written',
+    'outbox_written',
+    'before_save_commit',
+  ]) {
+    test('Rollback evento, comando y contadores en $stage', () async {
+      seed(events: []);
+      var fail = false;
+      final target = repository(
+        checkpoint: (name) async {
+          if (fail && name == stage) throw StateError('corte');
+        },
+      );
+      await target.loadSnapshot();
+      final db = opened.last;
+      final before = await db.query('storage_state');
+      final spaces = await db.query('local_spaces');
+      final command = intent(
+        target,
+        'watering_event.append',
+        tree.id,
+        event.toJson(),
+      );
+      fail = true;
+      await expectLater(
+        target.applyMutation(command),
+        throwsA(isA<TreeStorageException>()),
+      );
+      expect(await db.query('outbox'), isEmpty);
+      expect(await db.query('watering_events'), isEmpty);
+      expect(await db.query('storage_state'), before);
+      expect(await db.query('local_spaces'), spaces);
+      expect(target.versionOf(tree.id), 1);
+      fail = false;
+      await target.applyMutation(command);
+      expect(await db.query('outbox'), hasLength(1));
+    });
+  }
+
+  test('Versiones esperadas, dependencias causales y contadores', () async {
+    seed(events: []);
+    await repo.loadSnapshot();
+    final stale = LocalMutation(
+      spaceId: 'anonymous',
+      action: 'plant.update',
+      entityId: tree.id,
+      expectedRevision: repo.revision,
+      expectedVersion: 0,
+      payload: {'nombre': 'obsoleto'},
+    );
+    await expectLater(
+      repo.applyMutation(stale),
+      throwsA(
+        isA<TreeStorageException>().having(
+          (e) => e.cause.toString(),
+          'cause',
+          contains('stale_entity_version'),
+        ),
+      ),
+    );
+    final first = intent(repo, 'plant.update', tree.id, {'nombre': 'A'});
+    await repo.applyMutation(first);
+    final second = intent(repo, 'plant.update', tree.id, {'nombre': 'B'});
+    await repo.applyMutation(second);
+    final db = opened.last;
+    expect(
+      (await db.query('outbox_dependencies')).single['depends_on'],
+      first.operationId,
+    );
+    await expectLater(
+      db.insert('outbox_dependencies', {
+        'space_id': 'anonymous',
+        'operation_id': first.operationId,
+        'depends_on': second.operationId,
+      }),
+      throwsA(isA<DatabaseException>()),
+    );
+    await db.update('local_spaces', {
+      'next_local_sequence': maxLocalCounter,
+    }, where: "id='anonymous'");
+    await expectLater(
+      repo.applyMutation(intent(repo, 'plant.delete', tree.id, {})),
+      throwsA(isA<TreeStorageException>()),
+    );
+    expect((await repo.loadSnapshot())!.trees.single.nombre, 'B');
+  });
+
+  test(
+    'Espacios sintéticos aíslan IDs, operaciones, referencias y dependencias',
+    () async {
+      seed(events: []);
+      await repo.loadSnapshot();
+      final db = opened.last;
+      await db.insert('local_spaces', {'id': 'synthetic', 'kind': 'anonymous'});
+      final other = SqliteTreeRepository(
+        spaceId: 'synthetic',
+        openDatabase: open,
+        source: source,
+        backups: backups,
+      );
+      expect((await other.loadSnapshot())!.trees, isEmpty);
+      await other.applyMutation(
+        LocalMutation(
+          spaceId: 'synthetic',
+          action: 'plant.create',
+          entityId: tree.id,
+          expectedRevision: other.revision,
+          expectedVersion: 0,
+          payload: tree.toJson(),
+        ),
+      );
+      final wrong = LocalMutation(
+        spaceId: 'synthetic',
+        action: 'plant.delete',
+        entityId: tree.id,
+        expectedRevision: repo.revision,
+        expectedVersion: 1,
+        payload: {},
+      );
+      await expectLater(
+        repo.applyMutation(wrong),
+        throwsA(isA<TreeStorageException>()),
+      );
+      expect((await repo.loadSnapshot())!.trees.single.nombre, tree.nombre);
+      await expectLater(
+        db.insert('watering_events', {
+          'space_id': 'missing',
+          'id': 'x',
+          'plant_ref_id': tree.id,
+          'position': 0,
+          'plant_name_snapshot': 'x',
+          'occurred_at': '2026-01-01T00:00:00Z',
+          'event_type': 'manual_registration',
+        }),
+        throwsA(isA<DatabaseException>()),
+      );
+      final a = intent(repo, 'plant.update', tree.id, {'nombre': 'solo A'});
+      await repo.applyMutation(a);
+      final op = (await db.query(
+        'outbox',
+        where: "space_id='synthetic'",
+      )).single;
+      await expectLater(
+        db.insert('outbox_dependencies', {
+          'space_id': 'anonymous',
+          'operation_id': a.operationId,
+          'depends_on': op['operation_id'],
+        }),
+        throwsA(isA<DatabaseException>()),
+      );
+      expect((await other.loadSnapshot())!.trees.single.nombre, tree.nombre);
+    },
+  );
+
+  test('Proyección comparable no retrocede con reloj atrasado', () async {
+    seed(events: []);
+    await repo.loadSnapshot();
+    final past = WateringEvent(
+      plantId: tree.id,
+      plantName: tree.nombre,
+      occurredAt: DateTime.utc(2020),
+    );
+    final result = await repo.applyMutation(
+      intent(repo, 'watering_event.append', tree.id, past.toJson()),
+    );
+    expect(result.trees.single.ultimoRiego, tree.ultimoRiego);
+    expect(result.events.single.id, past.id);
+    expect(
+      (await opened.last.query('local_diagnostics')).single['code'],
+      'new_event_before_projection',
+    );
+  });
+
+  for (final raw in [
+    '2026-10-24T12:35:46.123456',
+    null,
+    '2020-01-01T00:00:00Z',
+  ]) {
+    test('Proyección retenida conserva incompatibilidad: $raw', () async {
+      source.records = [
+        jsonEncode(
+          PlantSnapshot(trees: [tree], events: [event]).toJson()
+            ..['trees'] = [
+              {...tree.toJson(), 'ultimoRiego': raw},
+            ],
+        ),
+      ];
+      final before = (await repo.loadSnapshot())!;
+      expect(
+        before.trees.single.toJson()['ultimoRiego'],
+        raw == null ? null : DateTime.parse(raw).toIso8601String(),
+      );
+      final db = opened.last;
+      final baseline = (await db.query('plants')).single['baseline_text'];
+      expect(
+        (await db.query('plants')).single['projection_mode'],
+        'legacy_hold',
+      );
+      final past = WateringEvent(
+        plantId: tree.id,
+        plantName: tree.nombre,
+        occurredAt: DateTime.utc(2019),
+      );
+      final after = await repo.applyMutation(
+        intent(repo, 'watering_event.append', tree.id, past.toJson()),
+      );
+      expect(after.trees.single.ultimoRiego, past.occurredAt);
+      await update(repo, after.trees.single.copyWith(nombre: 'Perfil'));
+      expect((await db.query('plants')).single['baseline_text'], baseline);
+      expect((await repo.loadSnapshot())!.events, hasLength(2));
+    });
+  }
+  test(
+    'Guardia de identidad rechaza base ausente o distinta sin fallback',
+    () async {
+      final path = '${directory.path}/guard.sqlite';
+      final first = await native_store.openIdentifiedPlantDatabase(path);
+      final identity = (await first.query(
+        'storage_state',
+      )).single['database_id'];
+      await first.close();
+      expect(await File('$path.activation-guard').readAsString(), identity);
+      await File('$path.activation-guard').writeAsString('otro');
+      await expectLater(
+        native_store.openIdentifiedPlantDatabase(path),
+        throwsStateError,
+      );
+      await File(path).rename('$path.saved');
+      await expectLater(
+        native_store.openIdentifiedPlantDatabase(path),
+        throwsStateError,
+      );
+      expect(await File(path).exists(), isFalse);
+      expect(source.reads, 0);
+    },
+  );
+
+  test(
+    'Controlador reconcilia respuesta perdida antes de aceptar otro riego',
+    () async {
+      seed(events: []);
+      var lose = true;
+      final target = repository(
+        checkpoint: (name) async {
+          if (name == 'after_save_commit' && lose) throw StateError('perdida');
+        },
+      );
+      final controller = TreesController(
+        repository: target,
+        autoRefresh: false,
+        clock: () => DateTime.utc(2026, 11, 6),
+      );
+      addTearDown(controller.dispose);
+      await controller.load();
+      expect(await controller.water(tree.id), isFalse);
+      expect(controller.eventsFor(), isEmpty);
+      expect(await controller.edit(tree.copyWith(nombre: 'nuevo')), isFalse);
+      lose = false;
+      expect(await controller.water(tree.id), isTrue);
+      expect(controller.eventsFor(), hasLength(1));
+      expect(await opened.last.query('outbox'), hasLength(1));
+      expect(await controller.water(tree.id), isTrue);
+      expect(controller.eventsFor(), hasLength(2));
+    },
+  );
+
+  test('Versiones agotadas y snapshots no eluden la cola', () async {
+    seed(events: []);
+    await repo.loadSnapshot();
+    final db = opened.last;
+    await expectLater(repo.save([]), throwsA(isA<TreeStorageException>()));
+    await db.update(
+      'plants',
+      {'local_version': maxLocalCounter},
+      where: 'space_id=? AND id=?',
+      whereArgs: ['anonymous', tree.id],
+    );
+    await repo.loadSnapshot();
+    await expectLater(
+      repo.applyMutation(intent(repo, 'plant.delete', tree.id, {})),
+      throwsA(isA<TreeStorageException>()),
+    );
+    expect(await db.query('outbox'), isEmpty);
+    expect((await db.query('plants')).single['deleted'], 0);
+    await db.update('storage_state', {
+      'revision': maxLocalCounter,
+    }, where: 'id=1');
+    await db.update(
+      'plants',
+      {'local_version': 1},
+      where: 'space_id=? AND id=?',
+      whereArgs: ['anonymous', tree.id],
+    );
+    await repo.loadSnapshot();
+    await expectLater(
+      repo.applyMutation(intent(repo, 'plant.delete', tree.id, {})),
+      throwsA(isA<TreeStorageException>()),
+    );
+    expect(await db.query('outbox'), isEmpty);
+  });
+  for (final stage in ['before_save_commit', 'after_save_commit']) {
+    test('Primera apertura reintenta la misma intención tras $stage', () async {
+      var fail = true;
+      final target = repository(
+        checkpoint: (name) async {
+          if (fail && name == stage) throw StateError('fallo inicial');
+        },
+      );
+      final controller = TreesController(
+        repository: target,
+        autoRefresh: false,
+      );
+      addTearDown(controller.dispose);
+      expect(await controller.load(), isFalse);
+      final pending = controller.pendingMutation!;
+      fail = false;
+      expect(await controller.load(), isTrue);
+      expect(controller.trees.single.id, pending.entityId);
+      expect(
+        (await opened.last.query('outbox')).single['operation_id'],
+        pending.operationId,
+      );
+      expect(controller.eventsFor(), isEmpty);
+      expect(controller.pendingMutation, isNull);
+    });
+  }
+  test(
+    'Un espacio inexistente falla al leer, sin jardín vacío ni preferencias',
+    () async {
+      seed();
+      await repo.loadSnapshot();
+      final reads = source.reads;
+      final missing = SqliteTreeRepository(
+        spaceId: 'missing',
+        openDatabase: open,
+        source: source,
+        backups: backups,
+      );
+      await expectLater(
+        missing.loadSnapshot(),
+        throwsA(isA<TreeStorageException>()),
+      );
+      expect(source.reads, reads);
+      expect(await opened.last.query('local_spaces'), hasLength(1));
+    },
+  );
 }

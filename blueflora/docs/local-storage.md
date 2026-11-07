@@ -1,3 +1,14 @@
+# Estado actual: SQLite v2 local — E.3 implementada y validada
+
+La implementación E.3 añade intenciones, outbox local_only, capturas previas y
+proyección conservadora. Ver [esquema y garantías E.3](local-outbox.md).
+La ruta de base y las protecciones E.2 permanecen. Implementación A/B/C y validación
+Android completadas; cierre E.3 autorizado por el usuario como hito Git v0.3.4.
+Ver [resultados físicos E.3](android-outbox-validation-results.md). Las 319 pruebas,
+análisis limpio y builds web/APK corresponden a la implementación; no se repitieron
+durante la prueba física ni en esta preparación documental. El resto del documento
+conserva el antecedente E.2. E.4 no está iniciada ni autorizada.
+
 # Almacenamiento anónimo SQLite — Fase 3.2E.2 cerrada
 
 No contiene red, cuentas, tokens, cambios PostgreSQL ni control de hardware.

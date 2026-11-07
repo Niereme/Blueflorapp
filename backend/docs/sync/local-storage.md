@@ -407,3 +407,26 @@ son un criterio de aceptación, no algo verificado por esta entrega documental.
 - [sqflite_common_ffi_web](https://pub.dev/packages/sqflite_common_ffi_web): experimental, IndexedDB y workers.
 - [SQLite atomic commit](https://www.sqlite.org/atomiccommit.html).
 - [SQLite PRAGMA](https://www.sqlite.org/pragma.html#pragma_synchronous).
+
+## Adaptación local E.3 autorizada (2026-11-07)
+
+El DDL anterior sigue siendo el modelo objetivo E.1, no el esquema físico actual.
+La entrega Flutter E.3 usa user_version=2 y solo estructuras locales utilizadas;
+ver [implementación y límites](../../../blueflora/docs/local-outbox.md).
+La incorporación de estado previo usa prior_state_records fuera del outbox, en
+lugar de generar comandos históricos en el paso 5. No representa nuevas creaciones
+ni riegos. Solo intenciones nuevas producen outbox local_only. La vinculación futura
+requiere consentimiento y operaciones de import nuevas, nunca habilitar esa cola.
+La proyección inicial preserva la vista E.2. Fechas local_unzoned y discrepancias
+mantienen legacy_hold y diagnóstico, sin resolución silenciosa. Las plantas
+comparables aplican máximo al registrar nuevos eventos. Las cuentas y todo el
+motor remoto permanecen fuera de E.3; no se crean sus tablas anticipadamente.
+Esta adaptación no modifica PostgreSQL, contratos REST ni protocolos HTTP.
+
+Implementación local A/B/C y validación Android completadas; cierre E.3 autorizado
+por el usuario como hito Git v0.3.4, sin tags ni cambios de versiones internas.
+Migración física v1 → v2 observada en RMX5111, Android 16/API 36,
+con cuatro comandos nuevos local_only persistentes tras reapertura y sin pérdida
+de datos. Ver [resultados físicos](../../../blueflora/docs/android-outbox-validation-results.md).
+Las 319 pruebas, análisis y builds pertenecen a la implementación; no se repitieron
+en la prueba física ni en la preparación documental. E.4 no está iniciada/autorizada.

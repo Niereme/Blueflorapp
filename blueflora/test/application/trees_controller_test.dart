@@ -112,15 +112,30 @@ void main() {
   );
 
   test(
-    'Una operación nueva descarta un reintento antiguo para no sobrescribir datos',
+    'Una intención incierta bloquea acciones nuevas hasta reconciliarla',
     () async {
       await controller.load();
       store.writeResult = false;
       await controller.add(Tree(nombre: 'Fallido', frecuenciaRiegoDias: 1));
       store.writeResult = true;
-      await controller.add(Tree(nombre: 'Confirmado', frecuenciaRiegoDias: 1));
-      expect(await controller.retrySave(), isFalse);
-      expect(controller.trees.single.nombre, 'Confirmado');
+      expect(
+        await controller.add(
+          Tree(nombre: 'Confirmado', frecuenciaRiegoDias: 1),
+        ),
+        isFalse,
+      );
+      expect(await controller.retrySave(), isTrue);
+      expect(controller.trees.single.nombre, 'Fallido');
+      expect(
+        await controller.add(
+          Tree(nombre: 'Confirmado', frecuenciaRiegoDias: 1),
+        ),
+        isTrue,
+      );
+      expect(controller.trees.map((tree) => tree.nombre), [
+        'Fallido',
+        'Confirmado',
+      ]);
     },
   );
 
