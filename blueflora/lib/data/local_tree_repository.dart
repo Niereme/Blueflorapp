@@ -4,6 +4,7 @@ import 'package:blueflora/domain/tree.dart';
 import 'package:blueflora/domain/plant_snapshot.dart';
 import 'package:blueflora/domain/watering_event.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'tree_repository.dart';
 
 /// Frontera de almacenamiento para probar fallos sin acceder al dispositivo.
 abstract class TreePreferencesStore {
@@ -41,7 +42,7 @@ class TreeStorageException implements Exception {
 
 /// Serializa lecturas y escrituras de esta instancia en orden de solicitud.
 /// Las pantallas futuras deberán compartir la misma instancia del repositorio.
-class LocalTreeRepository {
+class LocalTreeRepository extends TreeRepository {
   LocalTreeRepository({TreePreferencesStore? store})
     : _store = store ?? SharedPreferencesTreeStore();
 
@@ -64,6 +65,7 @@ class LocalTreeRepository {
   }
 
   /// null indica clave ausente; una instantánea vacía es distinta.
+  @override
   Future<PlantSnapshot?> loadSnapshot() => _serialize(() async {
     _loaded = false;
     try {
@@ -116,6 +118,7 @@ class LocalTreeRepository {
     }
   }
 
+  @override
   Future<void> save(List<Tree> trees, {List<WateringEvent>? events}) {
     final treeCopy = List<Tree>.of(trees);
     final eventCopy = events == null ? null : List<WateringEvent>.of(events);

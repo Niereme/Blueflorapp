@@ -39,7 +39,8 @@ class ReminderRegistry {
       (key, value) =>
           MapEntry(key, ReminderRecord.fromJson(value as Map<String, dynamic>)),
     );
-    if (result.values.map((value) => value.id).toSet().length != result.length) {
+    if (result.values.map((value) => value.id).toSet().length !=
+        result.length) {
       throw const FormatException('IDs de avisos duplicados.');
     }
     return result;

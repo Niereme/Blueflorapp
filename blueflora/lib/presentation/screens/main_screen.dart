@@ -2,7 +2,8 @@ import 'package:blueflora/application/settings_controller.dart';
 import 'package:blueflora/application/reminders_controller.dart';
 import 'package:blueflora/services/notification_service.dart';
 import 'package:blueflora/application/trees_controller.dart';
-import 'package:blueflora/data/local_tree_repository.dart';
+import 'package:blueflora/data/tree_repository.dart';
+import 'package:blueflora/data/storage/tree_repository_factory.dart';
 
 import 'package:blueflora/presentation/screens/views/history_view.dart';
 import 'package:blueflora/presentation/screens/views/home_view.dart';
@@ -18,7 +19,7 @@ class MainScreen extends StatefulWidget {
     this.notificationGateway,
   });
 
-  final LocalTreeRepository? repository;
+  final TreeRepository? repository;
   final SettingsController? settings;
   final NotificationGateway? notificationGateway;
 
@@ -36,7 +37,7 @@ class _MainScreenState extends State<MainScreen> {
   void initState() {
     super.initState();
     _controller = TreesController(
-      repository: widget.repository ?? LocalTreeRepository(),
+      repository: widget.repository ?? createTreeRepository(),
     );
     _settings = widget.settings ?? SettingsController();
     _reminders = RemindersController(
@@ -68,7 +69,39 @@ class _MainScreenState extends State<MainScreen> {
       ProfileView(settings: _settings, reminders: _reminders),
     ];
     return Scaffold(
-      body: IndexedStack(index: selectedIndex, children: screens),
+      body: ListenableBuilder(
+        listenable: _controller,
+        builder: (context, _) => Column(
+          children: [
+            if (_controller.storageNotice case final String notice)
+              SafeArea(
+                bottom: false,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        notice,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      if (_controller.storageReadOnly)
+                        TextButton(
+                          onPressed: _controller.loading
+                              ? null
+                              : _controller.load,
+                          child: const Text('Reintentar migración'),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            Expanded(
+              child: IndexedStack(index: selectedIndex, children: screens),
+            ),
+          ],
+        ),
+      ),
 
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.shifting,

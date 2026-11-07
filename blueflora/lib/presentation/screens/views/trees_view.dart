@@ -1,4 +1,4 @@
-import 'package:blueflora/data/local_tree_repository.dart';
+import 'package:blueflora/data/tree_repository.dart';
 import 'package:blueflora/application/trees_controller.dart';
 import 'package:blueflora/domain/tree.dart';
 import 'package:blueflora/presentation/screens/views/addtree_view.dart';
@@ -13,7 +13,7 @@ class TreesView extends StatefulWidget {
     : assert(controller != null || repository != null),
       assert(controller == null || repository == null);
 
-  final LocalTreeRepository? repository;
+  final TreeRepository? repository;
   final TreesController? controller;
 
   @override

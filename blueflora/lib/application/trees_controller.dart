@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:blueflora/data/local_tree_repository.dart';
+import 'package:blueflora/data/tree_repository.dart';
 import 'package:blueflora/domain/tree.dart';
 import 'package:blueflora/domain/watering_event.dart';
 import 'package:blueflora/domain/watering_summary.dart';
@@ -9,7 +10,7 @@ import 'package:flutter/widgets.dart';
 /// Una instancia compartida por MainScreen; confirma cambios solo tras guardar.
 class TreesController extends ChangeNotifier with WidgetsBindingObserver {
   TreesController({
-    required LocalTreeRepository repository,
+    required TreeRepository repository,
     DateTime Function()? clock,
     this.autoRefresh = true,
   }) : _repository = repository,
@@ -18,7 +19,9 @@ class TreesController extends ChangeNotifier with WidgetsBindingObserver {
     if (autoRefresh) WidgetsBinding.instance.addObserver(this);
   }
 
-  final LocalTreeRepository _repository;
+  final TreeRepository _repository;
+  String? get storageNotice => _repository.storageNotice;
+  bool get storageReadOnly => !_repository.writable;
   final DateTime Function() _clock;
   final bool autoRefresh;
   late DateTime _now;
@@ -60,7 +63,12 @@ class TreesController extends ChangeNotifier with WidgetsBindingObserver {
   String? get loadError => _loadError;
   String? get saveError => _saveError;
   bool get canModify =>
-      !_disposed && _loaded && !_loading && !_saving && _loadError == null;
+      !_disposed &&
+      _loaded &&
+      !_loading &&
+      !_saving &&
+      _loadError == null &&
+      _repository.writable;
   bool get canRetrySave => canModify && _failedSave != null;
   WateringSummary get summary => WateringSummary(_trees, _now);
 
