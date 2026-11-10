@@ -1,4 +1,25 @@
-# Arquitectura aprobada y decisiones de diseño — Fases 3.2A/3.2B/3.2C/3.2D
+> **Cierre autorizado de 3.2E.4 — 2026-11-10.** Hito Git v0.3.5;
+> creación de commit y publicación en origin/main autorizadas, publicación pendiente
+> de comprobación. Se conservan las limitaciones documentadas. E.5 no iniciada ni
+> autorizada. Los estados de preparación anteriores quedan como trazabilidad.
+
+# Estado actual E.4 (2026-11-10)
+
+Ocho escritores REST usan un gateway SECURITY DEFINER; Python conserva adaptación,
+autenticación y transacción, SQL decide CAS/estado y confirma datos/recibos/grupos.
+Las lecturas no unen nombres derivados de jardines/especies: las representaciones
+individuales dependen solo de campos almacenados cubiertos por revisión; los hechos
+son inmutables. No hay endpoints sync ni integración Flutter.
+Implementación y validación técnica completadas; cierre Git pendiente.
+Desarrollo migrado conjuntamente hasta 0005_mutation_gateway y comprobado READ ONLY;
+sin despliegue persistente ni CRUD HTTP en desarrollo. Ver
+[sus resultados](sync/e4-validation-results.md),
+[contrato REST](resources-api.md) y [migración y límites](sync/e4-deployment.md).
+
+El resto conserva decisiones y antecedentes de 3.2A–D; sus referencias a escritores
+Python y permisos anteriores quedan sustituidas para E.4 por los documentos enlazados.
+
+# Arquitectura aprobada — backend E.4 en revisión
 
 Este documento describe el destino de la arquitectura. En Fase 3.2B se implementan
 solo users, gardens, species, plants, growth_history y watering_events con

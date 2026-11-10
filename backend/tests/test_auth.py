@@ -10,7 +10,7 @@ from alembic.config import Config
 from sqlalchemy import text
 from sqlalchemy.exc import DBAPIError
 from app.core.config import BACKEND_ROOT, Settings
-from app.db.connection import create_api_engine, create_database_engine, set_owner, verify_api
+from app.db.connection import create_api_engine, create_database_engine, set_owner, verify_api, verify_database
 from app.main import create_app
 from app.modules.auth.repository import AuthRepository
 from app.modules.auth.security import digest, HASHER
@@ -31,6 +31,7 @@ def auth_db():
     created = False
     try:
         with migrator.begin() as c:
+            verify_database(c,'test')
             c.execute(text(f'CREATE SCHEMA "{schema}"'))
             created = True
             c.execute(text(f'GRANT USAGE ON SCHEMA "{schema}" TO blueflora_api_test'))

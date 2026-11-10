@@ -1,0 +1,48 @@
+{
+  "version": "bf-growth-diameter-exact-v1",
+  "table": "growth_history",
+  "name": "ck_growth_history_diameter_kind",
+  "original": "(((diameter_m IS NULL) AND (diameter_kind IS NULL)) OR ((diameter_m IS NOT NULL) AND (diameter_kind IS NOT NULL) AND ((diameter_kind)::text = ANY ((ARRAY['stem'::character varying, 'canopy'::character varying])::text[]))))",
+  "reconstructed": "(((diameter_m IS NULL) AND (diameter_kind IS NULL)) OR ((diameter_m IS NOT NULL) AND (diameter_kind IS NOT NULL) AND ((diameter_kind)::text = ANY (ARRAY[('stem'::character varying)::text, ('canopy'::character varying)::text]))))",
+  "constraint": {
+    "columns": [
+      "diameter_m",
+      "diameter_kind"
+    ],
+    "deferrable": false,
+    "deferred": false,
+    "delete": " ",
+    "enforced": true,
+    "expression": "(((diameter_m IS NULL) AND (diameter_kind IS NULL)) OR ((diameter_m IS NOT NULL) AND (diameter_kind IS NOT NULL) AND ((diameter_kind)::text = ANY ((ARRAY['stem'::character varying, 'canopy'::character varying])::text[]))))",
+    "index_immediate": null,
+    "index_ready": null,
+    "index_unique": null,
+    "index_valid": null,
+    "match": " ",
+    "nulls_not_distinct": null,
+    "ref_columns": null,
+    "ref_local": null,
+    "ref_table": null,
+    "type": "c",
+    "update": " ",
+    "validated": true
+  },
+  "columns": {
+    "diameter_m": {
+      "type": "double precision",
+      "not_null": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": null
+    },
+    "diameter_kind": {
+      "type": "character varying(20)",
+      "not_null": false,
+      "default": null,
+      "identity": "",
+      "generated": "",
+      "collation": "pg_catalog.default"
+    }
+  }
+}

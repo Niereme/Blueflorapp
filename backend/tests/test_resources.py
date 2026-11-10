@@ -15,13 +15,37 @@ pytestmark=pytest.mark.postgres
 def now(): return (datetime.now(timezone.utc)-timedelta(seconds=5)).isoformat()
 
 
+class ContractClient:
+    """Ayuda explícita para conservar los escenarios 3.2D con headers E.4.
+
+    Las pruebas nuevas de protocolo usan auth_client sin esta ayuda.
+    """
+    def __init__(self,client): self.client=client; self.tags={}
+    async def request(self,method,path,**kwargs):
+        headers=dict(kwargs.pop('headers',{})); key=(headers.get('Authorization'),path)
+        if method in ('POST','PATCH','DELETE'):
+            headers.setdefault('Idempotency-Key',str(uuid4()))
+        if method in ('PATCH','DELETE'):
+            response=await self.client.get(path,headers=headers)
+            tag=response.headers.get('etag') or self.tags.get(key)
+            kind='garden' if '/gardens/' in path else 'plant'
+            headers.setdefault('If-Match',tag or f'"bf1-{kind}-{path.split("/")[-1]}-r1"')
+        response=await self.client.request(method,path,headers=headers,**kwargs)
+        if response.headers.get('etag'): self.tags[key]=response.headers['etag']
+        return response
+    async def get(self,path,**kwargs): return await self.request('GET',path,**kwargs)
+    async def post(self,path,**kwargs): return await self.request('POST',path,**kwargs)
+    async def patch(self,path,**kwargs): return await self.request('PATCH',path,**kwargs)
+    async def delete(self,path,**kwargs): return await self.request('DELETE',path,**kwargs)
+
+
 @pytest.fixture
 async def actors(auth_client):
     await register(auth_client)
     await register(auth_client,'bob@example.com')
     a=bearer(await login(auth_client))
     b=bearer(await login(auth_client,'bob@example.com'))
-    return SimpleNamespace(client=auth_client,a=a,b=b)
+    return SimpleNamespace(client=ContractClient(auth_client),a=a,b=b)
 
 
 async def plant(actors,**values):
@@ -58,9 +82,9 @@ async def test_garden_restricts_delete_with_active_or_soft_deleted_plants(actors
     g=await garden(actors)
     p=await plant(actors,garden_id=g['id'])
     path='/api/v1/gardens/'+g['id']
-    assert (await actors.client.delete(path,headers=actors.a)).status_code==409
+    assert (await actors.client.delete(path,headers=actors.a)).status_code==204
     assert (await actors.client.delete('/api/v1/plants/'+p['id'],headers=actors.a)).status_code==204
-    assert (await actors.client.delete(path,headers=actors.a)).status_code==409
+    assert (await actors.client.delete(path,headers=actors.a)).status_code==204
 
 
 @pytest.mark.anyio
@@ -76,7 +100,7 @@ async def test_plant_crud_stable_uuid_duplicate_names_and_clear_optional_fields(
     result=await c.patch(path,json={'name':'Otro nombre','garden_id':None,'species_label':None,'initial_height_m':None,'watering_frequency_days':7},headers=actors.a)
     assert result.status_code==200
     edited=result.json()
-    assert edited['revision']==2 and edited['last_watered_at']==p['last_watered_at']
+    assert edited['revision']=='2' and edited['last_watered_at']==p['last_watered_at']
     assert edited['garden_id'] is None and edited['initial_height_m'] is None and edited['species_label'] is None
     assert (await c.get('/api/v1/plants',headers=actors.a)).json()['total']==2
     for _ in range(2): assert (await c.delete(path,headers=actors.a)).status_code==204
@@ -131,11 +155,11 @@ async def test_manual_watering_uuid_retry_is_idempotent_and_old_dates_do_not_reg
     retry=await c.post(path+'/watering-events',json=body,headers=actors.a)
     assert first.status_code==retry.status_code==201 and first.json()==retry.json()
     after=(await c.get(path,headers=actors.a)).json()
-    assert after['revision']==2
+    assert after['revision']=='2'
     older=(datetime.now(timezone.utc)-timedelta(days=3)).isoformat()
     assert (await c.post(path+'/watering-events',json={'occurred_at':older},headers=actors.a)).status_code==201
     final=(await c.get(path,headers=actors.a)).json()
-    assert final['last_watered_at']==after['last_watered_at'] and final['revision']==2
+    assert final['last_watered_at']==after['last_watered_at'] and final['revision']=='2'
     events=(await c.get('/api/v1/watering-events?limit=1',headers=actors.a)).json()
     assert events['total']==2 and events['items'][0]['id']==body['id']
     conflicting=await c.post(path+'/watering-events',json={**body,'occurred_at':older},headers=actors.a)
@@ -148,7 +172,7 @@ async def test_water_update_failure_rolls_back_new_event(actors,auth_db):
     me=(await c.get('/api/v1/me',headers=actors.a)).json()
     with auth_db.migrator.begin() as connection:
         set_owner(connection,me['id'])
-        connection.execute(text(f'UPDATE "{auth_db.schema}".plants SET revision=2147483647 WHERE id=:id'),{'id':p['id']})
+        connection.execute(text(f'UPDATE "{auth_db.schema}".plants SET revision=9223372036854775807 WHERE id=:id'),{'id':p['id']})
     response=await c.post('/api/v1/plants/'+p['id']+'/watering-events',json={'occurred_at':now()},headers=actors.a)
     assert response.status_code==503
     assert (await c.get('/api/v1/watering-events',headers=actors.a)).json()['total']==0
@@ -278,7 +302,9 @@ async def test_rls_using_with_check_and_minimal_privileges(actors,auth_db):
     with auth_db.runtime.begin() as c:
         verify_api(c,'test'); set_owner(c,b)
         assert c.execute(text(f'SELECT id FROM {s}.plants')).all()==[]
-        assert c.execute(text(f'UPDATE {s}.plants SET name=\'Otra\' WHERE id=:id'),{'id':p['id']}).rowcount==0
+        with pytest.raises(DBAPIError):
+            with c.begin_nested():
+                c.execute(text(f"UPDATE {s}.plants SET name='Otra' WHERE id=:id"),{'id':p['id']})
         for statement,params in [
             (f'INSERT INTO {s}.plants(id,owner_id,name,watering_frequency_days) VALUES(:id,:owner,\'Intrusión\',1)',{'id':uuid4(),'owner':a}),
             (f'UPDATE {s}.plants SET owner_id=:owner WHERE id=:id',{'owner':b,'id':p['id']}),
@@ -296,11 +322,9 @@ async def test_rls_using_with_check_and_minimal_privileges(actors,auth_db):
             with c.begin_nested():
                 c.execute(text(f"UPDATE {s}.plants SET name=set_config('blueflora.owner_id',:other,true) WHERE id=:id"),{'other':b,'id':p['id']})
         set_owner(c,b)
-        own=uuid4()
-        c.execute(text(f'INSERT INTO {s}.plants(id,owner_id,name,watering_frequency_days) VALUES(:id,:owner,\'Propia\',1)'),{'id':own,'owner':b})
         with pytest.raises(DBAPIError):
             with c.begin_nested():
-                c.execute(text(f'UPDATE {s}.plants SET garden_id=:garden WHERE id=:id'),{'garden':g['id'],'id':own})
+                c.execute(text(f"INSERT INTO {s}.plants(id,owner_id,name,watering_frequency_days) VALUES(:id,:owner,'Propia',1)"),{'id':uuid4(),'owner':b})
     with auth_db.migrator.begin() as c:
         c.execute(text(f'CREATE TABLE {s}.future_permission_probe(id uuid)'))
         policies=c.execute(text("SELECT qual,with_check FROM pg_policies WHERE schemaname=:schema AND policyname='owner_isolation' AND tablename IN ('gardens','plants','growth_history','watering_events')"),{'schema':auth_db.schema}).all()
@@ -342,18 +366,20 @@ async def test_watering_rejects_invalid_dates_unmodeled_quantities_and_internal_
 async def test_concurrent_same_uuid_watering_creates_one_event(actors,auth_db):
     from concurrent.futures import ThreadPoolExecutor
     from app.modules.common.repository import ResourceRepository
-    from app.modules.watering.schemas import WateringCreate
-    from app.modules.watering.service import WateringService
+    from app.modules.common.mutation import canonical
+    import json
     p=await plant(actors)
-    body=WateringCreate(id=uuid4(),occurred_at=now())
-    service=WateringService(ResourceRepository(auth_db.repository))
+    identifier=uuid4(); op=uuid4()
+    payload={'id':str(identifier),'occurred_at':datetime.fromisoformat(now()).astimezone(timezone.utc).isoformat(timespec='microseconds').replace('+00:00','Z')}
+    repository=ResourceRepository(auth_db.repository)
     access=actors.a['Authorization'].split(' ',1)[1]
+    frozen=canonical(op,'watering_event.create',UUID(p['id']),payload)
     with ThreadPoolExecutor(max_workers=2) as executor:
-        result=list(executor.map(lambda _: service.create(access,UUID(p['id']),body),range(2)))
-    assert result[0]['id']==result[1]['id']==body.id
+        result=list(executor.map(lambda _: repository.apply(access,op,frozen),range(2)))
+    assert result[0]==result[1] and json.loads(bytes.fromhex(result[0]['body_hex']))['id']==str(identifier)
     page=(await actors.client.get('/api/v1/watering-events',headers=actors.a)).json()
     assert page['total']==1
-    assert (await actors.client.get('/api/v1/plants/'+p['id'],headers=actors.a)).json()['revision']==2
+    assert (await actors.client.get('/api/v1/plants/'+p['id'],headers=actors.a)).json()['revision']=='2'
 
 
 @pytest.mark.anyio

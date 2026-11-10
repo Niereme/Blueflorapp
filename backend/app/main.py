@@ -1,4 +1,6 @@
 """Composición de la API. No inicializa PostgreSQL ni dispositivos."""
+from contextlib import asynccontextmanager
+from app.modules.common.mutation import ResourceInputLimits
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -18,8 +20,17 @@ from app.modules.health.router import router as health_router
 
 def create_app(settings: Settings | None = None, *, auth_service: AuthService | None = None) -> FastAPI:
     config = settings if settings is not None else Settings()
+    @asynccontextmanager
+    async def lifespan(app):
+        repository=getattr(app.state,'resource_repository',None)
+        if repository is not None:
+            with repository.auth.transaction() as connection:
+                repository.verify_schema(connection)
+        yield
+
     application = FastAPI(
         title=config.app_name,
+        lifespan=lifespan,
         docs_url="/docs" if config.docs_enabled else None,
         redoc_url=None,
         openapi_url="/openapi.json" if config.docs_enabled else None,
@@ -55,4 +66,5 @@ def create_app(settings: Settings | None = None, *, auth_service: AuthService | 
             response.headers['Pragma'] = 'no-cache'
         return response
 
+    application.add_middleware(ResourceInputLimits)
     return application

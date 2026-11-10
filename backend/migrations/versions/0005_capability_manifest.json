@@ -1,0 +1,452 @@
+{
+  "roles": {"M": {"bypass": false, "createdb": false, "createrole": false, "inherit": true, "login": true, "memberships": 0, "replication": false, "super": false}, "R": {"bypass": false, "createdb": false, "createrole": false, "inherit": false, "login": true, "memberships": 0, "replication": false, "super": false}},
+  "tables": {
+    "alembic_version": {
+      "acl": [["M", "DELETE", false], ["M", "INSERT", false], ["M", "MAINTAIN", false], ["M", "REFERENCES", false], ["M", "SELECT", false], ["M", "TRIGGER", false], ["M", "TRUNCATE", false], ["M", "UPDATE", false]],
+      "rls": false,
+      "kind": "r",
+      "force": false,
+      "owner": "M",
+      "columns": [
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "version_num", "not_null": true, "runtime": [], "type": "character varying(32)"}
+      ],
+      "runtime": [],
+      "policies": [],
+      "triggers": [],
+      "constraints": [
+        {"columns": ["version_num"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["version_num"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": true, "index_ready": true, "index_unique": true, "index_valid": true, "match": " ", "nulls_not_distinct": false, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "p", "update": " ", "validated": true}
+      ]
+    },
+    "auth_rate_limits": {
+      "acl": [["M", "DELETE", false], ["M", "INSERT", false], ["M", "MAINTAIN", false], ["M", "REFERENCES", false], ["M", "SELECT", false], ["M", "TRIGGER", false], ["M", "TRUNCATE", false], ["M", "UPDATE", false]],
+      "rls": true,
+      "kind": "r",
+      "force": true,
+      "owner": "M",
+      "columns": [
+        {"acl": [], "default": "1", "generated": "", "identity": "", "name": "attempts", "not_null": true, "runtime": [], "type": "integer"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "key_hash", "not_null": true, "runtime": [], "type": "character varying(64)"},
+        {"acl": [], "default": "now()", "generated": "", "identity": "", "name": "window_started_at", "not_null": true, "runtime": [], "type": "timestamp with time zone"}
+      ],
+      "runtime": [],
+      "policies": [{"check": "(current_setting('blueflora.auth_internal'::text, true) = 'on'::text)", "command": "*", "permissive": true, "roles": ["M"], "using": "(current_setting('blueflora.auth_internal'::text, true) = 'on'::text)"}],
+      "triggers": [],
+      "constraints": [
+        {"columns": ["attempts"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": "(attempts > 0)", "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "c", "update": " ", "validated": true},
+        {"columns": ["key_hash"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": "((key_hash)::text ~ '^[0-9a-f]{64}$'::text)", "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "c", "update": " ", "validated": true},
+        {"columns": ["attempts"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["key_hash"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["window_started_at"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["key_hash"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": true, "index_ready": true, "index_unique": true, "index_valid": true, "match": " ", "nulls_not_distinct": false, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "p", "update": " ", "validated": true}
+      ]
+    },
+    "auth_refresh_tokens": {
+      "acl": [["M", "DELETE", false], ["M", "INSERT", false], ["M", "MAINTAIN", false], ["M", "REFERENCES", false], ["M", "SELECT", false], ["M", "TRIGGER", false], ["M", "TRUNCATE", false], ["M", "UPDATE", false]],
+      "rls": true,
+      "kind": "r",
+      "force": true,
+      "owner": "M",
+      "columns": [
+        {"acl": [], "default": "now()", "generated": "", "identity": "", "name": "created_at", "not_null": true, "runtime": [], "type": "timestamp with time zone"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "session_id", "not_null": true, "runtime": [], "type": "uuid"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "token_hash", "not_null": true, "runtime": [], "type": "character varying(64)"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "used_at", "not_null": false, "runtime": [], "type": "timestamp with time zone"}
+      ],
+      "runtime": [],
+      "policies": [{"check": "(current_setting('blueflora.auth_internal'::text, true) = 'on'::text)", "command": "*", "permissive": true, "roles": ["M"], "using": "(current_setting('blueflora.auth_internal'::text, true) = 'on'::text)"}],
+      "triggers": [],
+      "constraints": [
+        {"columns": ["token_hash"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": "((token_hash)::text ~ '^[0-9a-f]{64}$'::text)", "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "c", "update": " ", "validated": true},
+        {"columns": ["session_id"], "deferrable": false, "deferred": false, "delete": "r", "enforced": true, "expression": null, "index_immediate": true, "index_ready": true, "index_unique": true, "index_valid": true, "match": "s", "nulls_not_distinct": false, "ref_columns": ["id"], "ref_local": true, "ref_table": "auth_sessions", "type": "f", "update": "a", "validated": true},
+        {"columns": ["created_at"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["session_id"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["token_hash"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["token_hash"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": true, "index_ready": true, "index_unique": true, "index_valid": true, "match": " ", "nulls_not_distinct": false, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "p", "update": " ", "validated": true}
+      ]
+    },
+    "auth_sessions": {
+      "acl": [["M", "DELETE", false], ["M", "INSERT", false], ["M", "MAINTAIN", false], ["M", "REFERENCES", false], ["M", "SELECT", false], ["M", "TRIGGER", false], ["M", "TRUNCATE", false], ["M", "UPDATE", false]],
+      "rls": true,
+      "kind": "r",
+      "force": true,
+      "owner": "M",
+      "columns": [
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "access_expires_at", "not_null": true, "runtime": [], "type": "timestamp with time zone"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "access_token_hash", "not_null": true, "runtime": [], "type": "character varying(64)"},
+        {"acl": [], "default": "now()", "generated": "", "identity": "", "name": "created_at", "not_null": true, "runtime": [], "type": "timestamp with time zone"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "expires_at", "not_null": true, "runtime": [], "type": "timestamp with time zone"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "id", "not_null": true, "runtime": [], "type": "uuid"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "revoked_at", "not_null": false, "runtime": [], "type": "timestamp with time zone"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "user_id", "not_null": true, "runtime": [], "type": "uuid"}
+      ],
+      "runtime": [],
+      "policies": [{"check": "(current_setting('blueflora.auth_internal'::text, true) = 'on'::text)", "command": "*", "permissive": true, "roles": ["M"], "using": "(current_setting('blueflora.auth_internal'::text, true) = 'on'::text)"}],
+      "triggers": [],
+      "constraints": [
+        {"columns": ["access_expires_at", "expires_at"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": "(access_expires_at <= expires_at)", "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "c", "update": " ", "validated": true},
+        {"columns": ["access_token_hash"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": "((access_token_hash)::text ~ '^[0-9a-f]{64}$'::text)", "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "c", "update": " ", "validated": true},
+        {"columns": ["expires_at", "created_at"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": "(expires_at > created_at)", "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "c", "update": " ", "validated": true},
+        {"columns": ["user_id"], "deferrable": false, "deferred": false, "delete": "r", "enforced": true, "expression": null, "index_immediate": true, "index_ready": true, "index_unique": true, "index_valid": true, "match": "s", "nulls_not_distinct": false, "ref_columns": ["id"], "ref_local": true, "ref_table": "users", "type": "f", "update": "a", "validated": true},
+        {"columns": ["access_expires_at"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["access_token_hash"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["created_at"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["expires_at"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["id"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["user_id"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["id"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": true, "index_ready": true, "index_unique": true, "index_valid": true, "match": " ", "nulls_not_distinct": false, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "p", "update": " ", "validated": true},
+        {"columns": ["access_token_hash"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": true, "index_ready": true, "index_unique": true, "index_valid": true, "match": " ", "nulls_not_distinct": false, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "u", "update": " ", "validated": true}
+      ]
+    },
+    "gardens": {
+      "acl": [["M", "DELETE", false], ["M", "INSERT", false], ["M", "MAINTAIN", false], ["M", "REFERENCES", false], ["R", "SELECT", false], ["M", "SELECT", false], ["M", "TRIGGER", false], ["M", "TRUNCATE", false], ["M", "UPDATE", false]],
+      "rls": true,
+      "kind": "r",
+      "force": true,
+      "owner": "M",
+      "columns": [
+        {"acl": [], "default": "now()", "generated": "", "identity": "", "name": "created_at", "not_null": true, "runtime": ["SELECT"], "type": "timestamp with time zone"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "deleted_at", "not_null": false, "runtime": ["SELECT"], "type": "timestamp with time zone"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "description", "not_null": false, "runtime": ["SELECT"], "type": "text"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "id", "not_null": true, "runtime": ["SELECT"], "type": "uuid"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "name", "not_null": true, "runtime": ["SELECT"], "type": "character varying(200)"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "owner_id", "not_null": true, "runtime": ["SELECT"], "type": "uuid"},
+        {"acl": [], "default": "'1'::bigint", "generated": "", "identity": "", "name": "revision", "not_null": true, "runtime": ["SELECT"], "type": "bigint"},
+        {"acl": [], "default": "now()", "generated": "", "identity": "", "name": "updated_at", "not_null": true, "runtime": ["SELECT"], "type": "timestamp with time zone"}
+      ],
+      "runtime": ["SELECT"],
+      "policies": [{"check": "(owner_id = (NULLIF(current_setting('blueflora.owner_id'::text, true), ''::text))::uuid)", "command": "*", "permissive": true, "roles": ["PUBLIC"], "using": "(owner_id = (NULLIF(current_setting('blueflora.owner_id'::text, true), ''::text))::uuid)"}],
+      "triggers": [],
+      "constraints": [
+        {"columns": ["name"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": "(length(btrim((name)::text)) > 0)", "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "c", "update": " ", "validated": true},
+        {"columns": ["revision"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": "(revision > 0)", "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "c", "update": " ", "validated": true},
+        {"columns": ["owner_id"], "deferrable": false, "deferred": false, "delete": "r", "enforced": true, "expression": null, "index_immediate": true, "index_ready": true, "index_unique": true, "index_valid": true, "match": "s", "nulls_not_distinct": false, "ref_columns": ["id"], "ref_local": true, "ref_table": "users", "type": "f", "update": "a", "validated": true},
+        {"columns": ["created_at"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["id"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["name"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["owner_id"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["revision"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["updated_at"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["id"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": true, "index_ready": true, "index_unique": true, "index_valid": true, "match": " ", "nulls_not_distinct": false, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "p", "update": " ", "validated": true},
+        {"columns": ["owner_id", "id"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": true, "index_ready": true, "index_unique": true, "index_valid": true, "match": " ", "nulls_not_distinct": false, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "u", "update": " ", "validated": true}
+      ]
+    },
+    "growth_history": {
+      "acl": [["M", "DELETE", false], ["M", "INSERT", false], ["M", "MAINTAIN", false], ["M", "REFERENCES", false], ["R", "SELECT", false], ["M", "SELECT", false], ["M", "TRIGGER", false], ["M", "TRUNCATE", false], ["M", "UPDATE", false]],
+      "rls": true,
+      "kind": "r",
+      "force": true,
+      "owner": "M",
+      "columns": [
+        {"acl": [], "collation": "pg_catalog.default", "default": null, "generated": "", "identity": "", "name": "diameter_kind", "not_null": false, "runtime": ["SELECT"], "type": "character varying(20)"},
+        {"acl": [], "collation": null, "default": null, "generated": "", "identity": "", "name": "diameter_m", "not_null": false, "runtime": ["SELECT"], "type": "double precision"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "height_m", "not_null": false, "runtime": ["SELECT"], "type": "double precision"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "id", "not_null": true, "runtime": ["SELECT"], "type": "uuid"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "measured_at", "not_null": true, "runtime": ["SELECT"], "type": "timestamp with time zone"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "notes", "not_null": false, "runtime": ["SELECT"], "type": "text"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "owner_id", "not_null": true, "runtime": ["SELECT"], "type": "uuid"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "plant_id", "not_null": false, "runtime": ["SELECT"], "type": "uuid"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "plant_name_snapshot", "not_null": true, "runtime": ["SELECT"], "type": "character varying(200)"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "plant_ref_id", "not_null": true, "runtime": ["SELECT"], "type": "uuid"},
+        {"acl": [], "default": "now()", "generated": "", "identity": "", "name": "recorded_at", "not_null": true, "runtime": ["SELECT"], "type": "timestamp with time zone"}
+      ],
+      "runtime": ["SELECT"],
+      "policies": [{"check": "(owner_id = (NULLIF(current_setting('blueflora.owner_id'::text, true), ''::text))::uuid)", "command": "*", "permissive": true, "roles": ["PUBLIC"], "using": "(owner_id = (NULLIF(current_setting('blueflora.owner_id'::text, true), ''::text))::uuid)"}],
+      "triggers": [{"args": "", "columns": "", "constraint": false, "deferrable": false, "deferred": false, "enabled": "O", "function": "reject_immutable", "function_local": true, "type": 27, "when": null}],
+      "constraints": [
+        {"columns": ["diameter_m"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": "((diameter_m IS NULL) OR ((diameter_m > (0)::double precision) AND (diameter_m < 'Infinity'::double precision)))", "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "c", "update": " ", "validated": true},
+        {"columns": ["diameter_m", "diameter_kind"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": "(((diameter_m IS NULL) AND (diameter_kind IS NULL)) OR ((diameter_m IS NOT NULL) AND (diameter_kind IS NOT NULL) AND ((diameter_kind)::text = ANY ((ARRAY['stem'::character varying, 'canopy'::character varying])::text[]))))", "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "c", "update": " ", "validated": true},
+        {"columns": ["height_m"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": "((height_m IS NULL) OR ((height_m > (0)::double precision) AND (height_m < 'Infinity'::double precision)))", "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "c", "update": " ", "validated": true},
+        {"columns": ["height_m", "diameter_m"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": "((height_m IS NOT NULL) OR (diameter_m IS NOT NULL))", "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "c", "update": " ", "validated": true},
+        {"columns": ["plant_id", "plant_ref_id"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": "((plant_id IS NULL) OR (plant_id = plant_ref_id))", "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "c", "update": " ", "validated": true},
+        {"columns": ["plant_name_snapshot"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": "(length(btrim((plant_name_snapshot)::text)) > 0)", "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "c", "update": " ", "validated": true},
+        {"columns": ["owner_id"], "deferrable": false, "deferred": false, "delete": "r", "enforced": true, "expression": null, "index_immediate": true, "index_ready": true, "index_unique": true, "index_valid": true, "match": "s", "nulls_not_distinct": false, "ref_columns": ["id"], "ref_local": true, "ref_table": "users", "type": "f", "update": "a", "validated": true},
+        {"columns": ["owner_id", "plant_id"], "deferrable": false, "deferred": false, "delete": "r", "enforced": true, "expression": null, "index_immediate": true, "index_ready": true, "index_unique": true, "index_valid": true, "match": "s", "nulls_not_distinct": false, "ref_columns": ["owner_id", "id"], "ref_local": true, "ref_table": "plants", "type": "f", "update": "a", "validated": true},
+        {"columns": ["owner_id", "plant_ref_id"], "deferrable": false, "deferred": false, "delete": "r", "enforced": true, "expression": null, "index_immediate": true, "index_ready": true, "index_unique": true, "index_valid": true, "match": "s", "nulls_not_distinct": false, "ref_columns": ["owner_id", "id"], "ref_local": true, "ref_table": "plant_identities", "type": "f", "update": "a", "validated": true},
+        {"columns": ["id"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["measured_at"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["owner_id"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["plant_name_snapshot"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["plant_ref_id"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["recorded_at"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["id"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": true, "index_ready": true, "index_unique": true, "index_valid": true, "match": " ", "nulls_not_distinct": false, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "p", "update": " ", "validated": true}
+      ]
+    },
+    "plant_identities": {
+      "acl": [["M", "DELETE", false], ["M", "INSERT", false], ["M", "MAINTAIN", false], ["M", "REFERENCES", false], ["M", "SELECT", false], ["M", "TRIGGER", false], ["M", "TRUNCATE", false], ["M", "UPDATE", false]],
+      "rls": true,
+      "kind": "r",
+      "force": true,
+      "owner": "M",
+      "columns": [
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "id", "not_null": true, "runtime": [], "type": "uuid"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "owner_id", "not_null": true, "runtime": [], "type": "uuid"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "revision", "not_null": true, "runtime": [], "type": "bigint"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "state", "not_null": true, "runtime": [], "type": "character varying(30)"}
+      ],
+      "runtime": [],
+      "policies": [{"check": "(owner_id = (NULLIF(current_setting('blueflora.owner_id'::text, true), ''::text))::uuid)", "command": "*", "permissive": true, "roles": ["PUBLIC"], "using": "(owner_id = (NULLIF(current_setting('blueflora.owner_id'::text, true), ''::text))::uuid)"}],
+      "triggers": [],
+      "constraints": [
+        {"columns": ["revision"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": "(revision > 0)", "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "c", "update": " ", "validated": true},
+        {"columns": ["state"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": "((state)::text = ANY ((ARRAY['full'::character varying, 'historical_only'::character varying])::text[]))", "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "c", "update": " ", "validated": true},
+        {"columns": ["owner_id"], "deferrable": false, "deferred": false, "delete": "r", "enforced": true, "expression": null, "index_immediate": true, "index_ready": true, "index_unique": true, "index_valid": true, "match": "s", "nulls_not_distinct": false, "ref_columns": ["id"], "ref_local": true, "ref_table": "users", "type": "f", "update": "a", "validated": true},
+        {"columns": ["id"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["owner_id"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["revision"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["state"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["id"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": true, "index_ready": true, "index_unique": true, "index_valid": true, "match": " ", "nulls_not_distinct": false, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "p", "update": " ", "validated": true},
+        {"columns": ["owner_id", "id"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": true, "index_ready": true, "index_unique": true, "index_valid": true, "match": " ", "nulls_not_distinct": false, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "u", "update": " ", "validated": true}
+      ]
+    },
+    "plants": {
+      "acl": [["M", "DELETE", false], ["M", "INSERT", false], ["M", "MAINTAIN", false], ["M", "REFERENCES", false], ["R", "SELECT", false], ["M", "SELECT", false], ["M", "TRIGGER", false], ["M", "TRUNCATE", false], ["M", "UPDATE", false]],
+      "rls": true,
+      "kind": "r",
+      "force": true,
+      "owner": "M",
+      "columns": [
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "baseline_last_watered_at", "not_null": false, "runtime": ["SELECT"], "type": "timestamp with time zone"},
+        {"acl": [], "default": "'unknown'::character varying", "generated": "", "identity": "", "name": "baseline_source", "not_null": true, "runtime": ["SELECT"], "type": "character varying(30)"},
+        {"acl": [], "default": "now()", "generated": "", "identity": "", "name": "created_at", "not_null": true, "runtime": ["SELECT"], "type": "timestamp with time zone"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "deleted_at", "not_null": false, "runtime": ["SELECT"], "type": "timestamp with time zone"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "garden_id", "not_null": false, "runtime": ["SELECT"], "type": "uuid"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "id", "not_null": true, "runtime": ["SELECT"], "type": "uuid"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "initial_height_m", "not_null": false, "runtime": ["SELECT"], "type": "double precision"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "last_watered_at", "not_null": false, "runtime": ["SELECT"], "type": "timestamp with time zone"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "name", "not_null": true, "runtime": ["SELECT"], "type": "character varying(200)"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "owner_id", "not_null": true, "runtime": ["SELECT"], "type": "uuid"},
+        {"acl": [], "default": "1", "generated": "", "identity": "", "name": "revision", "not_null": true, "runtime": ["SELECT"], "type": "bigint"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "species_id", "not_null": false, "runtime": ["SELECT"], "type": "uuid"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "species_label", "not_null": false, "runtime": ["SELECT"], "type": "character varying(250)"},
+        {"acl": [], "default": "now()", "generated": "", "identity": "", "name": "updated_at", "not_null": true, "runtime": ["SELECT"], "type": "timestamp with time zone"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "watering_frequency_days", "not_null": true, "runtime": ["SELECT"], "type": "integer"}
+      ],
+      "runtime": ["SELECT"],
+      "policies": [{"check": "(owner_id = (NULLIF(current_setting('blueflora.owner_id'::text, true), ''::text))::uuid)", "command": "*", "permissive": true, "roles": ["PUBLIC"], "using": "(owner_id = (NULLIF(current_setting('blueflora.owner_id'::text, true), ''::text))::uuid)"}],
+      "triggers": [],
+      "constraints": [
+        {"columns": ["baseline_source"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": "((baseline_source)::text = ANY ((ARRAY['unknown'::character varying, 'legacy_snapshot'::character varying, 'declared_initial'::character varying])::text[]))", "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "c", "update": " ", "validated": true},
+        {"columns": ["initial_height_m"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": "((initial_height_m IS NULL) OR ((initial_height_m > (0)::double precision) AND (initial_height_m < 'Infinity'::double precision)))", "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "c", "update": " ", "validated": true},
+        {"columns": ["name"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": "(length(btrim((name)::text)) > 0)", "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "c", "update": " ", "validated": true},
+        {"columns": ["revision"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": "(revision > 0)", "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "c", "update": " ", "validated": true},
+        {"columns": ["watering_frequency_days"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": "((watering_frequency_days >= 1) AND (watering_frequency_days <= 36500))", "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "c", "update": " ", "validated": true},
+        {"columns": ["owner_id"], "deferrable": false, "deferred": false, "delete": "r", "enforced": true, "expression": null, "index_immediate": true, "index_ready": true, "index_unique": true, "index_valid": true, "match": "s", "nulls_not_distinct": false, "ref_columns": ["id"], "ref_local": true, "ref_table": "users", "type": "f", "update": "a", "validated": true},
+        {"columns": ["owner_id", "garden_id"], "deferrable": false, "deferred": false, "delete": "r", "enforced": true, "expression": null, "index_immediate": true, "index_ready": true, "index_unique": true, "index_valid": true, "match": "s", "nulls_not_distinct": false, "ref_columns": ["owner_id", "id"], "ref_local": true, "ref_table": "gardens", "type": "f", "update": "a", "validated": true},
+        {"columns": ["owner_id", "id"], "deferrable": false, "deferred": false, "delete": "r", "enforced": true, "expression": null, "index_immediate": true, "index_ready": true, "index_unique": true, "index_valid": true, "match": "s", "nulls_not_distinct": false, "ref_columns": ["owner_id", "id"], "ref_local": true, "ref_table": "plant_identities", "type": "f", "update": "a", "validated": true},
+        {"columns": ["species_id"], "deferrable": false, "deferred": false, "delete": "r", "enforced": true, "expression": null, "index_immediate": true, "index_ready": true, "index_unique": true, "index_valid": true, "match": "s", "nulls_not_distinct": false, "ref_columns": ["id"], "ref_local": true, "ref_table": "species", "type": "f", "update": "a", "validated": true},
+        {"columns": ["baseline_source"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["created_at"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["id"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["name"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["owner_id"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["revision"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["updated_at"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["watering_frequency_days"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["id"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": true, "index_ready": true, "index_unique": true, "index_valid": true, "match": " ", "nulls_not_distinct": false, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "p", "update": " ", "validated": true},
+        {"columns": ["owner_id", "id"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": true, "index_ready": true, "index_unique": true, "index_valid": true, "match": " ", "nulls_not_distinct": false, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "u", "update": " ", "validated": true}
+      ]
+    },
+    "species": {
+      "acl": [["M", "DELETE", false], ["M", "INSERT", false], ["M", "MAINTAIN", false], ["M", "REFERENCES", false], ["R", "SELECT", false], ["M", "SELECT", false], ["M", "TRIGGER", false], ["M", "TRUNCATE", false], ["M", "UPDATE", false]],
+      "rls": false,
+      "kind": "r",
+      "force": false,
+      "owner": "M",
+      "columns": [
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "common_name", "not_null": false, "runtime": ["SELECT"], "type": "character varying(250)"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "description", "not_null": false, "runtime": ["SELECT"], "type": "text"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "id", "not_null": true, "runtime": ["SELECT"], "type": "uuid"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "scientific_name", "not_null": true, "runtime": ["SELECT"], "type": "character varying(250)"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "source", "not_null": false, "runtime": ["SELECT"], "type": "text"}
+      ],
+      "runtime": ["SELECT"],
+      "policies": [],
+      "triggers": [],
+      "constraints": [
+        {"columns": ["scientific_name"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": "(length(btrim((scientific_name)::text)) > 0)", "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "c", "update": " ", "validated": true},
+        {"columns": ["id"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["scientific_name"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["id"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": true, "index_ready": true, "index_unique": true, "index_valid": true, "match": " ", "nulls_not_distinct": false, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "p", "update": " ", "validated": true},
+        {"columns": ["scientific_name"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": true, "index_ready": true, "index_unique": true, "index_valid": true, "match": " ", "nulls_not_distinct": false, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "u", "update": " ", "validated": true}
+      ]
+    },
+    "sync_change_groups": {
+      "acl": [["M", "DELETE", false], ["M", "INSERT", false], ["M", "MAINTAIN", false], ["M", "REFERENCES", false], ["M", "SELECT", false], ["M", "TRIGGER", false], ["M", "TRUNCATE", false], ["M", "UPDATE", false]],
+      "rls": true,
+      "kind": "r",
+      "force": true,
+      "owner": "M",
+      "columns": [
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "change_id", "not_null": true, "runtime": [], "type": "uuid"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "epoch", "not_null": true, "runtime": [], "type": "uuid"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "images", "not_null": true, "runtime": [], "type": "jsonb"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "operation_id", "not_null": true, "runtime": [], "type": "uuid"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "owner_id", "not_null": true, "runtime": [], "type": "uuid"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "sequence", "not_null": true, "runtime": [], "type": "bigint"}
+      ],
+      "runtime": [],
+      "policies": [{"check": "(owner_id = (NULLIF(current_setting('blueflora.owner_id'::text, true), ''::text))::uuid)", "command": "*", "permissive": true, "roles": ["PUBLIC"], "using": "(owner_id = (NULLIF(current_setting('blueflora.owner_id'::text, true), ''::text))::uuid)"}],
+      "triggers": [{"args": "", "columns": "", "constraint": false, "deferrable": false, "deferred": false, "enabled": "O", "function": "reject_immutable", "function_local": true, "type": 27, "when": null}],
+      "constraints": [
+        {"columns": ["images"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": "((jsonb_typeof(images) = 'array'::text) AND ((jsonb_array_length(images) >= 1) AND (jsonb_array_length(images) <= 4)))", "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "c", "update": " ", "validated": true},
+        {"columns": ["sequence", "change_id", "operation_id", "images"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": "(octet_length(convert_to((jsonb_build_object('sequence', (sequence)::text, 'change_id', change_id, 'operation_id', operation_id, 'entities', images))::text, 'UTF8'::name)) <= 65536)", "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "c", "update": " ", "validated": true},
+        {"columns": ["sequence"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": "(sequence > 0)", "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "c", "update": " ", "validated": true},
+        {"columns": ["owner_id", "operation_id"], "deferrable": true, "deferred": true, "delete": "a", "enforced": true, "expression": null, "index_immediate": true, "index_ready": true, "index_unique": true, "index_valid": true, "match": "s", "nulls_not_distinct": false, "ref_columns": ["owner_id", "operation_id"], "ref_local": true, "ref_table": "sync_operations", "type": "f", "update": "a", "validated": true},
+        {"columns": ["owner_id"], "deferrable": false, "deferred": false, "delete": "r", "enforced": true, "expression": null, "index_immediate": true, "index_ready": true, "index_unique": true, "index_valid": true, "match": "s", "nulls_not_distinct": false, "ref_columns": ["owner_id"], "ref_local": true, "ref_table": "sync_owner_state", "type": "f", "update": "a", "validated": true},
+        {"columns": ["change_id"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["epoch"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["images"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["operation_id"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["owner_id"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["sequence"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["owner_id", "epoch", "sequence"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": true, "index_ready": true, "index_unique": true, "index_valid": true, "match": " ", "nulls_not_distinct": false, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "p", "update": " ", "validated": true},
+        {"columns": ["owner_id", "change_id"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": true, "index_ready": true, "index_unique": true, "index_valid": true, "match": " ", "nulls_not_distinct": false, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "u", "update": " ", "validated": true},
+        {"columns": ["owner_id", "operation_id"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": true, "index_ready": true, "index_unique": true, "index_valid": true, "match": " ", "nulls_not_distinct": false, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "u", "update": " ", "validated": true}
+      ]
+    },
+    "sync_operations": {
+      "acl": [["M", "DELETE", false], ["M", "INSERT", false], ["M", "MAINTAIN", false], ["M", "REFERENCES", false], ["M", "SELECT", false], ["M", "TRIGGER", false], ["M", "TRUNCATE", false], ["M", "UPDATE", false]],
+      "rls": true,
+      "kind": "r",
+      "force": true,
+      "owner": "M",
+      "columns": [
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "action", "not_null": true, "runtime": [], "type": "text"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "canonical_request", "not_null": true, "runtime": [], "type": "text"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "committed_sequence", "not_null": false, "runtime": [], "type": "bigint"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "content_type", "not_null": false, "runtime": [], "type": "text"},
+        {"acl": [], "default": "clock_timestamp()", "generated": "", "identity": "", "name": "created_at", "not_null": true, "runtime": [], "type": "timestamp with time zone"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "entity_id", "not_null": false, "runtime": [], "type": "uuid"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "epoch", "not_null": false, "runtime": [], "type": "uuid"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "etag", "not_null": false, "runtime": [], "type": "text"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "fingerprint", "not_null": true, "runtime": [], "type": "bytea"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "format", "not_null": true, "runtime": [], "type": "text"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "location", "not_null": false, "runtime": [], "type": "text"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "operation_id", "not_null": true, "runtime": [], "type": "uuid"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "owner_id", "not_null": true, "runtime": [], "type": "uuid"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "receipt", "not_null": true, "runtime": [], "type": "jsonb"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "response_body", "not_null": true, "runtime": [], "type": "bytea"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "response_status", "not_null": true, "runtime": [], "type": "integer"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "terminal_status", "not_null": true, "runtime": [], "type": "text"}
+      ],
+      "runtime": [],
+      "policies": [{"check": "(owner_id = (NULLIF(current_setting('blueflora.owner_id'::text, true), ''::text))::uuid)", "command": "*", "permissive": true, "roles": ["PUBLIC"], "using": "(owner_id = (NULLIF(current_setting('blueflora.owner_id'::text, true), ''::text))::uuid)"}],
+      "triggers": [{"args": "", "columns": "", "constraint": false, "deferrable": false, "deferred": false, "enabled": "O", "function": "reject_immutable", "function_local": true, "type": 27, "when": null}],
+      "constraints": [
+        {"columns": ["epoch", "committed_sequence"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": "((epoch IS NULL) = (committed_sequence IS NULL))", "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "c", "update": " ", "validated": true},
+        {"columns": ["fingerprint"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": "(octet_length(fingerprint) = 32)", "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "c", "update": " ", "validated": true},
+        {"columns": ["terminal_status"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": "(terminal_status = ANY (ARRAY['applied'::text, 'conflict'::text, 'rejected'::text]))", "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "c", "update": " ", "validated": true},
+        {"columns": ["owner_id", "epoch", "committed_sequence"], "deferrable": true, "deferred": true, "delete": "a", "enforced": true, "expression": null, "index_immediate": true, "index_ready": true, "index_unique": true, "index_valid": true, "match": "s", "nulls_not_distinct": false, "ref_columns": ["owner_id", "epoch", "sequence"], "ref_local": true, "ref_table": "sync_change_groups", "type": "f", "update": "a", "validated": true},
+        {"columns": ["owner_id"], "deferrable": false, "deferred": false, "delete": "r", "enforced": true, "expression": null, "index_immediate": true, "index_ready": true, "index_unique": true, "index_valid": true, "match": "s", "nulls_not_distinct": false, "ref_columns": ["owner_id"], "ref_local": true, "ref_table": "sync_owner_state", "type": "f", "update": "a", "validated": true},
+        {"columns": ["action"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["canonical_request"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["created_at"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["fingerprint"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["format"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["operation_id"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["owner_id"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["receipt"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["response_body"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["response_status"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["terminal_status"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["owner_id", "operation_id"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": true, "index_ready": true, "index_unique": true, "index_valid": true, "match": " ", "nulls_not_distinct": false, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "p", "update": " ", "validated": true}
+      ]
+    },
+    "sync_owner_state": {
+      "acl": [["M", "DELETE", false], ["M", "INSERT", false], ["M", "MAINTAIN", false], ["M", "REFERENCES", false], ["M", "SELECT", false], ["M", "TRIGGER", false], ["M", "TRUNCATE", false], ["M", "UPDATE", false]],
+      "rls": true,
+      "kind": "r",
+      "force": true,
+      "owner": "M",
+      "columns": [
+        {"acl": [], "default": "gen_random_uuid()", "generated": "", "identity": "", "name": "epoch", "not_null": true, "runtime": [], "type": "uuid"},
+        {"acl": [], "default": "0", "generated": "", "identity": "", "name": "last_sequence", "not_null": true, "runtime": [], "type": "bigint"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "owner_id", "not_null": true, "runtime": [], "type": "uuid"}
+      ],
+      "runtime": [],
+      "policies": [{"check": "(owner_id = (NULLIF(current_setting('blueflora.owner_id'::text, true), ''::text))::uuid)", "command": "*", "permissive": true, "roles": ["PUBLIC"], "using": "(owner_id = (NULLIF(current_setting('blueflora.owner_id'::text, true), ''::text))::uuid)"}],
+      "triggers": [],
+      "constraints": [
+        {"columns": ["last_sequence"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": "(last_sequence >= 0)", "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "c", "update": " ", "validated": true},
+        {"columns": ["owner_id"], "deferrable": false, "deferred": false, "delete": "r", "enforced": true, "expression": null, "index_immediate": true, "index_ready": true, "index_unique": true, "index_valid": true, "match": "s", "nulls_not_distinct": false, "ref_columns": ["id"], "ref_local": true, "ref_table": "users", "type": "f", "update": "a", "validated": true},
+        {"columns": ["epoch"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["last_sequence"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["owner_id"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["owner_id"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": true, "index_ready": true, "index_unique": true, "index_valid": true, "match": " ", "nulls_not_distinct": false, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "p", "update": " ", "validated": true}
+      ]
+    },
+    "users": {
+      "acl": [["M", "DELETE", false], ["M", "INSERT", false], ["M", "MAINTAIN", false], ["M", "REFERENCES", false], ["M", "SELECT", false], ["M", "TRIGGER", false], ["M", "TRUNCATE", false], ["M", "UPDATE", false]],
+      "rls": true,
+      "kind": "r",
+      "force": true,
+      "owner": "M",
+      "columns": [
+        {"acl": [["R", "SELECT", false]], "default": "now()", "generated": "", "identity": "", "name": "created_at", "not_null": true, "runtime": ["SELECT"], "type": "timestamp with time zone"},
+        {"acl": [["R", "SELECT", false]], "default": null, "generated": "", "identity": "", "name": "email", "not_null": true, "runtime": ["SELECT"], "type": "character varying(320)"},
+        {"acl": [["R", "SELECT", false]], "default": null, "generated": "", "identity": "", "name": "id", "not_null": true, "runtime": ["SELECT"], "type": "uuid"},
+        {"acl": [["R", "SELECT", false]], "default": "false", "generated": "", "identity": "", "name": "is_active", "not_null": true, "runtime": ["SELECT"], "type": "boolean"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "password_hash", "not_null": false, "runtime": [], "type": "text"}
+      ],
+      "runtime": [],
+      "policies": [{"check": "(current_setting('blueflora.auth_internal'::text, true) = 'on'::text)", "command": "a", "permissive": true, "roles": ["M"], "using": null}, {"check": null, "command": "r", "permissive": true, "roles": ["M"], "using": "(current_setting('blueflora.auth_internal'::text, true) = 'on'::text)"}, {"check": "(id = (NULLIF(current_setting('blueflora.owner_id'::text, true), ''::text))::uuid)", "command": "*", "permissive": true, "roles": ["PUBLIC"], "using": "(id = (NULLIF(current_setting('blueflora.owner_id'::text, true), ''::text))::uuid)"}],
+      "triggers": [],
+      "constraints": [
+        {"columns": ["email"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": "(((email)::text = lower(btrim((email)::text))) AND (length((email)::text) > 0))", "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "c", "update": " ", "validated": true},
+        {"columns": ["is_active", "password_hash"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": "((NOT is_active) OR (password_hash IS NOT NULL))", "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "c", "update": " ", "validated": true},
+        {"columns": ["created_at"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["email"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["id"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["is_active"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["id"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": true, "index_ready": true, "index_unique": true, "index_valid": true, "match": " ", "nulls_not_distinct": false, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "p", "update": " ", "validated": true},
+        {"columns": ["email"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": true, "index_ready": true, "index_unique": true, "index_valid": true, "match": " ", "nulls_not_distinct": false, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "u", "update": " ", "validated": true}
+      ]
+    },
+    "watering_events": {
+      "acl": [["M", "DELETE", false], ["M", "INSERT", false], ["M", "MAINTAIN", false], ["M", "REFERENCES", false], ["R", "SELECT", false], ["M", "SELECT", false], ["M", "TRIGGER", false], ["M", "TRUNCATE", false], ["M", "UPDATE", false]],
+      "rls": true,
+      "kind": "r",
+      "force": true,
+      "owner": "M",
+      "columns": [
+        {"acl": [], "default": "'manual'::character varying", "generated": "", "identity": "", "name": "event_type", "not_null": true, "runtime": ["SELECT"], "type": "character varying(30)"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "id", "not_null": true, "runtime": ["SELECT"], "type": "uuid"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "occurred_at", "not_null": true, "runtime": ["SELECT"], "type": "timestamp with time zone"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "owner_id", "not_null": true, "runtime": ["SELECT"], "type": "uuid"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "plant_id", "not_null": false, "runtime": ["SELECT"], "type": "uuid"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "plant_name_snapshot", "not_null": true, "runtime": ["SELECT"], "type": "character varying(200)"},
+        {"acl": [], "default": null, "generated": "", "identity": "", "name": "plant_ref_id", "not_null": true, "runtime": ["SELECT"], "type": "uuid"},
+        {"acl": [], "default": "now()", "generated": "", "identity": "", "name": "recorded_at", "not_null": true, "runtime": ["SELECT"], "type": "timestamp with time zone"}
+      ],
+      "runtime": ["SELECT"],
+      "policies": [{"check": "(owner_id = (NULLIF(current_setting('blueflora.owner_id'::text, true), ''::text))::uuid)", "command": "*", "permissive": true, "roles": ["PUBLIC"], "using": "(owner_id = (NULLIF(current_setting('blueflora.owner_id'::text, true), ''::text))::uuid)"}],
+      "triggers": [{"args": "", "columns": "", "constraint": false, "deferrable": false, "deferred": false, "enabled": "O", "function": "reject_immutable", "function_local": true, "type": 27, "when": null}],
+      "constraints": [
+        {"columns": ["event_type"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": "((event_type)::text = 'manual'::text)", "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "c", "update": " ", "validated": true},
+        {"columns": ["plant_id", "plant_ref_id"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": "((plant_id IS NULL) OR (plant_id = plant_ref_id))", "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "c", "update": " ", "validated": true},
+        {"columns": ["plant_name_snapshot"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": "(length(btrim((plant_name_snapshot)::text)) > 0)", "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "c", "update": " ", "validated": true},
+        {"columns": ["owner_id"], "deferrable": false, "deferred": false, "delete": "r", "enforced": true, "expression": null, "index_immediate": true, "index_ready": true, "index_unique": true, "index_valid": true, "match": "s", "nulls_not_distinct": false, "ref_columns": ["id"], "ref_local": true, "ref_table": "users", "type": "f", "update": "a", "validated": true},
+        {"columns": ["owner_id", "plant_id"], "deferrable": false, "deferred": false, "delete": "r", "enforced": true, "expression": null, "index_immediate": true, "index_ready": true, "index_unique": true, "index_valid": true, "match": "s", "nulls_not_distinct": false, "ref_columns": ["owner_id", "id"], "ref_local": true, "ref_table": "plants", "type": "f", "update": "a", "validated": true},
+        {"columns": ["owner_id", "plant_ref_id"], "deferrable": false, "deferred": false, "delete": "r", "enforced": true, "expression": null, "index_immediate": true, "index_ready": true, "index_unique": true, "index_valid": true, "match": "s", "nulls_not_distinct": false, "ref_columns": ["owner_id", "id"], "ref_local": true, "ref_table": "plant_identities", "type": "f", "update": "a", "validated": true},
+        {"columns": ["event_type"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["id"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["occurred_at"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["owner_id"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["plant_name_snapshot"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["plant_ref_id"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["recorded_at"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": null, "index_ready": null, "index_unique": null, "index_valid": null, "match": " ", "nulls_not_distinct": null, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "n", "update": " ", "validated": true},
+        {"columns": ["id"], "deferrable": false, "deferred": false, "delete": " ", "enforced": true, "expression": null, "index_immediate": true, "index_ready": true, "index_unique": true, "index_valid": true, "match": " ", "nulls_not_distinct": false, "ref_columns": null, "ref_local": null, "ref_table": null, "type": "p", "update": " ", "validated": true}
+      ]
+    }
+  },
+  "builtins": {"pg_catalog.gen_random_uuid()": true, "pg_catalog.sha256(bytea)": true},
+  "functions": [["auth_access", {"acl": [["R", "EXECUTE", false], ["M", "EXECUTE", false]], "arguments": "p_hash text", "body": null, "config": ["search_path=pg_catalog, pg_temp"], "defaults": 0, "definer": true, "kind": "f", "language": "plpgsql", "leakproof": false, "owner": "M", "return": "record", "runtime": true, "runtime_grant": false, "set": true, "strict": false, "volatile": "v"}], ["auth_attempt", {"acl": [["R", "EXECUTE", false], ["M", "EXECUTE", false]], "arguments": "p_key text", "body": null, "config": ["search_path=pg_catalog, pg_temp"], "defaults": 0, "definer": true, "kind": "f", "language": "plpgsql", "leakproof": false, "owner": "M", "return": "boolean", "runtime": true, "runtime_grant": false, "set": false, "strict": false, "volatile": "v"}], ["auth_logout", {"acl": [["R", "EXECUTE", false], ["M", "EXECUTE", false]], "arguments": "p_access text", "body": null, "config": ["search_path=pg_catalog, pg_temp"], "defaults": 0, "definer": true, "kind": "f", "language": "plpgsql", "leakproof": false, "owner": "M", "return": "void", "runtime": true, "runtime_grant": false, "set": false, "strict": false, "volatile": "v"}], ["auth_lookup", {"acl": [["R", "EXECUTE", false], ["M", "EXECUTE", false]], "arguments": "p_email text", "body": null, "config": ["search_path=pg_catalog, pg_temp"], "defaults": 0, "definer": true, "kind": "f", "language": "plpgsql", "leakproof": false, "owner": "M", "return": "record", "runtime": true, "runtime_grant": false, "set": true, "strict": false, "volatile": "v"}], ["auth_register", {"acl": [["R", "EXECUTE", false], ["M", "EXECUTE", false]], "arguments": "p_id uuid, p_email text, p_hash text", "body": null, "config": ["search_path=pg_catalog, pg_temp"], "defaults": 0, "definer": true, "kind": "f", "language": "plpgsql", "leakproof": false, "owner": "M", "return": "void", "runtime": true, "runtime_grant": false, "set": false, "strict": false, "volatile": "v"}], ["auth_rotate", {"acl": [["R", "EXECUTE", false], ["M", "EXECUTE", false]], "arguments": "p_old text, p_access text, p_refresh text", "body": null, "config": ["search_path=pg_catalog, pg_temp"], "defaults": 0, "definer": true, "kind": "f", "language": "plpgsql", "leakproof": false, "owner": "M", "return": "boolean", "runtime": true, "runtime_grant": false, "set": false, "strict": false, "volatile": "v"}], ["auth_start_session", {"acl": [["R", "EXECUTE", false], ["M", "EXECUTE", false]], "arguments": "p_id uuid, p_user uuid, p_access text, p_refresh text", "body": null, "config": ["search_path=pg_catalog, pg_temp"], "defaults": 0, "definer": true, "kind": "f", "language": "plpgsql", "leakproof": false, "owner": "M", "return": "boolean", "runtime": true, "runtime_grant": false, "set": false, "strict": false, "volatile": "v"}], ["reject_immutable", {"acl": [["M", "EXECUTE", false]], "arguments": "", "body": " BEGIN RAISE EXCEPTION 'Registro inmutable' USING ERRCODE='42501'; END ", "config": ["search_path=pg_catalog, pg_temp"], "defaults": 0, "definer": false, "kind": "f", "language": "plpgsql", "leakproof": false, "owner": "M", "return": "trigger", "runtime": false, "runtime_grant": false, "set": false, "strict": false, "volatile": "v"}], ["resource_apply", {"acl": [["R", "EXECUTE", false], ["M", "EXECUTE", false]], "arguments": "p_operation_id uuid, p_request_canonical text", "body": null, "config": ["TimeZone=UTC", "search_path=pg_catalog, pg_temp"], "defaults": 0, "definer": true, "kind": "f", "language": "plpgsql", "leakproof": false, "owner": "M", "return": "jsonb", "runtime": true, "runtime_grant": false, "set": false, "strict": false, "volatile": "v"}]],
+  "postgres_major": 18,
+  "schema_owner_valid": true,
+  "schema_public_create": false,
+  "schema_runtime_usage": true,
+  "schema_runtime_create": false,
+  "runtime_database_create": false,
+  "diameter_check_contract": true
+}

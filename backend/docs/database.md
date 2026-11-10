@@ -1,3 +1,28 @@
+> **Cierre autorizado de 3.2E.4 — 2026-11-10.** Hito Git v0.3.5;
+> creación de commit y publicación en origin/main autorizadas, publicación pendiente
+> de comprobación. Se conservan las limitaciones documentadas. E.5 no iniciada ni
+> autorizada. Los estados de preparación anteriores quedan como trazabilidad.
+
+# Estado E.4: desarrollo migrado; cierre Git pendiente
+
+Las revisiones nuevas son 0004_domain_revisions y 0005_mutation_gateway. No cambian
+0001–0003. Añaden BIGINT/jardines archivables, baseline e identidades, owner_state,
+recibos y grupos inmutables. FK históricas y species→plants pasan a RESTRICT;
+no se reescriben hechos al borrar físicamente. Backfill bajo FORCE RLS conserva
+UUID, campos y fechas y no fabrica operaciones/eventos históricos.
+
+La función resource_apply(uuid,text), SECURITY DEFINER del migrador, es la única
+entrada de escritura runtime. Sin DML de recursos o tablas privadas para API;
+permisos de columna retirados explícitamente. Auth y atributos de roles intactos.
+Los downgrade nuevos se rechazan para preservar datos; no recuperar una entrega
+confirmada con una copia anterior que pierda recibos/ACK.
+
+**No ejecutar los comandos históricos de upgrade contra desarrollo sin nueva
+autorización.** 0004+0005 ya se aplicaron conjuntamente en desarrollo con
+transacción externa; los ensayos sintéticos permanecen en blueflora_test. Ver [preflight/corte](sync/e4-deployment.md) y
+[evidencia](sync/e4-validation-results.md). Lo siguiente conserva documentación
+histórica de configuración/base y contratos anteriores a E.4.
+
 # PostgreSQL local — Fase 3.2B
 
 ## Alcance y requisitos
@@ -70,7 +95,7 @@ con su propio rol de migración; nunca comparte el rol API ni las credenciales. 
 bases ni roles, no inserta semillas y no se ejecuta al arrancar FastAPI. Incluye
 las seis tablas y `alembic_version`. Las operaciones DDL son transaccionales;
 una colisión con tablas existentes falla, sin reemplazarlas. Un segundo upgrade
-es un no-op. `current` debe mostrar `0003_resource_permissions (head)` y `check-schema` debe
+es un no-op. `current` debe mostrar `0005_mutation_gateway (head)` y `check-schema` debe
 indicar que no hay operaciones pendientes respecto de los modelos.
 
 Alternativa estándar desde backend: `python -m alembic upgrade head`,

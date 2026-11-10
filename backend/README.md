@@ -1,3 +1,36 @@
+> **Cierre autorizado de 3.2E.4 — 2026-11-10.** Hito Git v0.3.5;
+> creación de commit y publicación en origin/main autorizadas, publicación pendiente
+> de comprobación. Se conservan las limitaciones documentadas. E.5 no iniciada ni
+> autorizada. Los estados de preparación anteriores quedan como trazabilidad.
+
+# BlueFlora — E.4 preparada para revisión de cierre
+
+Implementación y validación técnica de **3.2E.4 completadas; cierre autorizado, publicación Git pendiente**.
+Hito Git autorizado **v0.3.5**, sin cambiar versiones internas ni crear tag/release.
+Las **292 pruebas aisladas** aprobadas corresponden a la ejecución anterior;
+no se repitieron para esta preparación documental.
+
+Respaldo y restauración acreditados para el origen vacío; fallo inicial de
+comparación CHECK diagnosticado y resuelto por aceptación exclusiva de las dos
+expresiones completas de **bf-growth-diameter-exact-v1**. Se conservan intentos
+fallidos y resoluciones en sus informes históricos. Migración conjunta de
+desarrollo hasta **0005_mutation_gateway** completada; verificaciones posteriores
+READ ONLY y carga/lifespan/liveness correctas, proceso temporal cerrado.
+No hubo CRUD HTTP en desarrollo ni despliegue persistente.
+
+Datos poblados sintéticos en pruebas no equivalen a un backfill poblado observado
+en desarrollo. Rendimiento y PITR no acreditados. El contexto de propietario
+confía en el proceso/conexión API; RLS no autentica credenciales runtime comprometidas.
+Flutter continúa sin HTTP, login ni sincronización. **E.5 no iniciada ni autorizada**.
+El usuario autorizó el cierre E.4 y el commit/push de los 56 archivos revisados.
+La publicación se confirmará contra origin/main; este documento no la presume.
+
+[Contrato REST](docs/resources-api.md), [validación](docs/sync/e4-validation-results.md),
+[migración ejecutada y límites](docs/sync/e4-development-migration-results.md).
+Los apartados de instalación y fases anteriores conservados debajo no autorizan
+repetir migraciones ni activar servicios. El proyecto usa fuentes del repositorio;
+los ejemplos de instalación en /tmp no son archivos requeridos para ejecutarlo.
+
 # BlueFlora — Backend, Fase 3.2D
 
 Base independiente de Flutter con FastAPI y configuración por entorno.
@@ -136,7 +169,7 @@ migración, verificación y reversión.
 - `app/modules/health/router.py`: liveness independiente.
 - `app/modules/auth/`: registro, login, tokens opacos, refresh, logout y cuenta autenticada.
 - `app/db/`: metadatos, conexión protegida, contexto de propietario y comandos.
-- `migrations/`: `0001_initial`, `0002_auth` y `0003_resource_permissions`.
+- `migrations/`: `0001_initial`–`0005_mutation_gateway`, incluidos sus auxiliares SQL/JSON.
 - `app/modules/`: auth, gardens, plants, devices, telemetry, irrigation, watering,
   sync; auth, gardens, plants y watering incluyen operaciones reales;
   dispositivos, telemetría, riego físico y sync permanecen reservados.

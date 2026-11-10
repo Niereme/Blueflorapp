@@ -16,6 +16,7 @@ from sqlalchemy.exc import IntegrityError, DBAPIError
 from app.core.config import BACKEND_ROOT, Settings
 from app.db.base import Base
 from app.db.connection import create_database_engine, set_owner, verify_database
+from app.modules.common.models import identities
 from app.db.models import Garden, GrowthHistory, Plant, Species, User, WateringEvent
 
 pytestmark = pytest.mark.postgres
@@ -63,6 +64,7 @@ def owner(connection):
 def plant(connection, owner_id, **values):
     result = dict(id=uuid4(), owner_id=owner_id, name="Mi planta", watering_frequency_days=3)
     result.update(values)
+    connection.execute(insert(identities).values(id=result["id"],owner_id=owner_id,state="full",revision=1))
     connection.execute(insert(Plant).values(**result))
     return result["id"]
 
@@ -71,6 +73,8 @@ def event(connection, owner_id, plant_id, **values):
     result = dict(id=uuid4(), owner_id=owner_id, plant_id=plant_id,
                   plant_ref_id=plant_id or uuid4(), plant_name_snapshot="Nombre histórico", occurred_at=NOW)
     result.update(values)
+    if plant_id is None:
+        connection.execute(insert(identities).values(id=result['plant_ref_id'],owner_id=owner_id,state='historical_only',revision=1))
     connection.execute(insert(WateringEvent).values(**result))
     return result["id"]
 
@@ -85,14 +89,13 @@ def test_initial_migration_matches_models_and_reverses_in_isolation(db):
     c, schema = db
     tables = set(inspect(c).get_table_names(schema=schema))
     assert tables == set(Base.metadata.tables) | {"alembic_version"}
-    assert c.scalar(text(f'SELECT version_num FROM "{schema}".alembic_version')) == "0003_resource_permissions"
+    assert c.scalar(text(f'SELECT version_num FROM "{schema}".alembic_version')) == "0005_mutation_gateway"
     context = MigrationContext.configure(c, opts={"compare_type": True})
     assert compare_metadata(context, Base.metadata) == []
     config = migration_config(c, schema)
-    command.downgrade(config, "base")
-    assert set(inspect(c).get_table_names(schema=schema)) == {"alembic_version"}
-    command.upgrade(config, "head")
-    assert "watering_events" in inspect(c).get_table_names(schema=schema)
+    with pytest.raises(RuntimeError,match='corregir hacia delante'):
+        command.downgrade(config, "base")
+    assert c.scalar(text(f'SELECT version_num FROM "{schema}".alembic_version'))=='0005_mutation_gateway'
 
 
 def test_uuid_duplicate_names_and_optional_fields_round_trip(db):
@@ -156,11 +159,11 @@ def test_hard_delete_retains_watering_and_growth_history(db):
     e = event(c, o, p)
     c.execute(insert(GrowthHistory).values(id=uuid4(), owner_id=o, plant_id=p,
         plant_ref_id=p, plant_name_snapshot="Antes", height_m=1.4, measured_at=NOW))
-    c.execute(delete(Plant).where(Plant.id == p))
+    rejects(c,delete(Plant).where(Plant.id == p))
     row = c.execute(select(WateringEvent.__table__).where(WateringEvent.id == e)).mappings().one()
-    assert row['plant_id'] is None and row['plant_ref_id'] == p and row['owner_id'] == o
+    assert row['plant_id'] == p and row['plant_ref_id'] == p and row['owner_id'] == o
     growth = c.execute(select(GrowthHistory.__table__)).mappings().one()
-    assert growth['plant_id'] is None and growth['plant_ref_id'] == p
+    assert growth['plant_id'] == p and growth['plant_ref_id'] == p
     assert growth['owner_id'] == o
 
 

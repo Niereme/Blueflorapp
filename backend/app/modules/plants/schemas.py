@@ -40,7 +40,7 @@ class PlantRead(BaseModel):
     initial_height_m: float | None
     watering_frequency_days: int
     last_watered_at: datetime | None
-    revision: int
+    revision: str
     deleted_at: datetime | None
     created_at: datetime
     updated_at: datetime
@@ -71,6 +71,7 @@ class GrowthCreate(Identified, Measured):
 
 
 class GrowthRead(BaseModel):
+    revision: str = "1"
     id: UUID
     plant_id: UUID | None
     plant_ref_id: UUID

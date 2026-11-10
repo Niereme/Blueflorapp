@@ -1,3 +1,8 @@
+> **Cierre autorizado de 3.2E.4 — 2026-11-10.** Hito Git v0.3.5;
+> creación de commit y publicación en origin/main autorizadas, publicación pendiente
+> de comprobación. Se conservan las limitaciones documentadas. E.5 no iniciada ni
+> autorizada. Los estados de preparación anteriores quedan como trazabilidad.
+
 # BlueFlora — Fase 3.2E.1: especificación de sincronización
 
 Estado: **diseño normativo v1 propuesto para aprobación; no implementado**.
@@ -22,6 +27,17 @@ se conserva su original y se solicita resolución. Protocolo y esquema local son
 versiones independientes. Cambiarlos requiere revisar esta especificación.
 Los contratos actuales siguen descritos en [resources-api.md](../resources-api.md);
 los campos y endpoints nuevos de estos documentos aún NO existen.
+
+## Estado servidor E.4 y precedencia actual
+
+Implementación y validación técnica completadas; cierre Git pendiente, hito
+propuesto v0.3.5. Desarrollo migrado a 0005_mutation_gateway; sin despliegue persistente.
+[Validación y límites](e4-validation-results.md), [migración real](e4-development-migration-results.md),
+[contrato REST vigente](../resources-api.md) y [diseño E.4A aprobado](e4a-contract-gateway-migration.md).
+Las secciones E.1 de este README son una fotografía histórica anterior a E.3/E.4:
+no describen el SQLite/outbox local ni el contrato REST vigentes. Los endpoints
+sync/bootstrap/import continúan sin implementar. Flutter sin HTTP/login/sync;
+E.5 no iniciada ni autorizada.
 
 ## Decisiones cerradas del protocolo v1
 

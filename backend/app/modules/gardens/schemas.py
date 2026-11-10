@@ -21,6 +21,9 @@ class GardenPatch(Patch):
 
 
 class GardenRead(BaseModel):
+    revision: str
+    updated_at: datetime
+    deleted_at: datetime | None
     id: UUID
     name: str
     description: str | None

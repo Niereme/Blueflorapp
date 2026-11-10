@@ -1,140 +1,105 @@
-# Fase 3.2D — API de jardines, plantas, catálogo e historiales
+# E.4 — contrato REST implementado, en revisión
 
-Todos los endpoints siguientes requieren Authorization: Bearer con un access token
-válido. No se modifica Flutter ni se implementa sincronización. El proceso reutiliza
-el mismo AuthRepository/engine API existente, sin nuevas instancias de credenciales.
+Código y pruebas aisladas; **no aplicado ni desplegado en desarrollo**.
+Sustituye deliberadamente el contrato escritor 3.2D. Las rutas mantienen Bearer
+access token y contexto owner autenticado por transacción. Auth conserva su contrato.
 
-## Rutas
+## Rutas, headers y respuestas
 
-| Métodos | Ruta | Comportamiento |
+| Escritura | Headers obligatorios | Respuesta inicial y replay |
 | --- | --- | --- |
-| POST, GET | /api/v1/gardens | Crear / listar jardines propios |
-| GET, PATCH, DELETE | /api/v1/gardens/{id} | Consultar, editar, eliminar jardín vacío |
-| POST, GET | /api/v1/plants | Crear / listar plantas propias |
-| GET, PATCH, DELETE | /api/v1/plants/{id} | Consultar, editar, eliminar lógicamente |
-| GET | /api/v1/species | Catálogo global existente, paginado |
-| GET | /api/v1/species/{id} | Consultar especie existente |
-| POST, GET | /api/v1/plants/{id}/growth-history | Registrar / consultar mediciones individuales |
-| GET | /api/v1/growth-history | Historial de crecimiento propio, filtro plant_id opcional |
-| GET | /api/v1/growth-history/{id} | Consultar una medición propia |
-| POST, GET | /api/v1/plants/{id}/watering-events | Registrar / consultar riegos manuales |
-| GET | /api/v1/watering-events | Historial de riegos propio, filtro plant_id opcional |
-| GET | /api/v1/watering-events/{id} | Consultar evento propio |
+| POST /api/v1/gardens | Idempotency-Key UUID | 201 GardenRead, Location individual, ETag r1 |
+| PATCH /api/v1/gardens/{id} | Key + If-Match | 200 GardenRead/ETag |
+| DELETE /api/v1/gardens/{id} | Key + If-Match | 204 vacío/ETag tombstone |
+| POST /api/v1/plants | Key | 201 PlantRead, Location individual, ETag r1 |
+| PATCH /api/v1/plants/{id} | Key + If-Match | 200 PlantRead/ETag |
+| DELETE /api/v1/plants/{id} | Key + If-Match | 204 vacío/ETag tombstone |
+| POST /api/v1/plants/{id}/growth-history | Key | 201 GrowthRead, Location /api/v1/growth-history/{id}, ETag r1 |
+| POST /api/v1/plants/{id}/watering-events | Key | 201 WateringRead, Location /api/v1/watering-events/{id}, ETag r1 |
 
-Las respuestas GET/PATCH son 200, POST 201 y DELETE 204. El registro de cuentas
-conserva su contrato anterior 202. No hay PUT ni modificación/borrado de eventos,
-mediciones o catálogo. OpenAPI documenta los campos y restricciones reales.
+Key significa Idempotency-Key: una UUID, sin headers repetidos; namespace global
+por owner entre acciones/recursos y futuro sync. If-Match es un único ETag fuerte
+`"bf1-<tipo>-<uuid>-r<revision>"`; tipos garden, plant, growth, watering. PATCH/DELETE
+requieren tipo/UUID del objetivo, sin W/, listas o *. POST rechaza If-Match.
 
-Todos los listados devuelven `{items, total, limit, offset}`. Predeterminados:
-limit=20, offset=0; máximo 100 elementos y offset 1000000. Orden de jardines/plantas
-por created_at,id; catálogo por scientific_name,id; historiales por fecha medida/
-ocurrida descendente y UUID descendente para desempatar. Los datos se filtran por
-RLS antes de contar/paginar. Esta paginación no es un cursor de sincronización ni
-una instantánea estable ante cambios concurrentes entre peticiones.
+revision es string decimal positiva, sin signo/ceros iniciales, máximo BIGINT
+9223372036854775807. Hechos tienen "1". GET individual y respuesta escritora usan
+los mismos bytes UTF-8/ETag; no se unen campos mutables de otras entidades.
+Cambiar jardín o catálogo no cambia la representación de una planta; renombrar
+la planta no cambia el snapshot histórico del hecho. GET activo de un tombstone
+retorna 404. Listas de jardines/plantas admiten include_deleted=true.
 
-## Entradas permitidas
+Replay se reconoce después de autenticar y antes de CAS/relaciones/reloj. Devuelve
+status, bytes de cuerpo, Content-Type, Location y ETag originales, incluso tras
+edición/borrado. Los demás headers de transporte no son parte del recibo.
+Una Key distinta con UUID propio de jardín/planta existente no fusiona creaciones.
+Un hecho con UUID propio y campos declarados idénticos reconoce el hecho original,
+sin grupo/revisión nuevos; contenido distinto es conflicto. REST nuevo exige planta
+activa para una Key nueva; el replay funciona después de borrado.
 
-Los cuerpos rechazan campos desconocidos. No aceptan owner_id, created_at,
-updated_at, revision, deleted_at, plant_ref_id, nombre histórico ni recorded_at.
-Los UUID de recursos se generan si no se proporcionan en creación; una vez creados
-no son editables. Esto prepara contratos con IDs estables sin implementar sync.
+No-op con revisión vigente devuelve representación/ETag sin incrementos ni grupo;
+tiene recibo. Borrado repetido con Key nueva exige revisión vigente del tombstone.
+Jardín se archiva conservando todas las asignaciones, incluidas plantas eliminadas;
+no permite asignaciones nuevas. Perfil de una planta ya asignada puede editarse
+conservando ese jardín archivado. Historial sigue consultable tras borrar planta.
 
-- Jardín: name obligatorio, recortado, no vacío, máximo 200; description opcional,
-  máximo 4000, admite null. PATCH permite solo esos dos campos, sin nombre null.
-  No hay coordenadas obligatorias. Un PATCH vacío es inválido.
-- Planta: name, watering_frequency_days obligatorios. Opcionales garden_id,
-  species_id, species_label (250), initial_height_m y last_watered_at inicial.
-  Frecuencia entera real entre 1 y 36500; no se aceptan booleanos, fracciones o
-  textos numéricos. Dimensiones numéricas en metros, positivas y finitas.
-  PATCH permite esos datos excepto last_watered_at; los riegos actualizan esa fecha
-  a través del endpoint manual. Campos opcionales pueden limpiarse con null.
-- Crecimiento: measured_at obligatorio; height_m y diameter_m independientemente
-  opcionales, con al menos uno. Si hay diámetro, diameter_kind es stem o canopy;
-  no se admite tipo sin diámetro. notes opcional (4000). Nombre de planta/UUID
-  histórico se toman del registro autenticado, no del cliente.
-- Riego manual: occurred_at obligatorio, id opcional. event_type se fija a manual
-  en el servidor. No hay cantidad de agua en el esquema aprobado: volume, litros,
-  quantity y similares se rechazan; no se inventan medidas ni se añaden columnas.
+## Entradas y representaciones
 
-Fechas de entrada: cadenas ISO 8601 con offset o Z, no timestamps numéricos ni
-fechas sin zona. Se rechazan fechas futuras para mediciones, riegos y último riego
-inicial; no hay tolerancia implícita al desfase de reloj. PostgreSQL usa TIMESTAMPTZ
-y conexiones UTC. No se cambia el cálculo Flutter de periodos de 24 horas.
+- Jardín: name obligatorio, trim/no vacío/200; description nullable/4000. PATCH
+  admite esos dos campos, name no null. Respuesta añade revision/updated_at/deleted_at.
+- Planta: name y watering_frequency_days (int estricto 1–36500) obligatorios.
+  Opcionales garden_id, species_id, species_label (250), initial_height_m positiva
+  finita, last_watered_at inicial. PATCH no admite last_watered_at. Baseline inicial
+  se conserva sin fabricar riegos. Catálogo no sobrescribe especie libre o frecuencia.
+- Crecimiento: measured_at, al menos altura/diámetro positivo finito en metros;
+  diameter_kind stem/canopy requerido junto a diámetro; notes nullable/4000.
+- Riego: occurred_at; tipo manual servidor. Sin litros, bombas o confirmación física.
+- UUID opcional solo en creación, no null explícito: generado **después** de lookup
+  si fue omitido. owner/revision/created_at/recorded_at/snapshot y otros internos
+  no son entrada. Los hechos añaden revision "1" a la respuesta.
+- RFC3339 con zona y hasta seis decimales, normalizado UTC microsegundos. El reloj
+  servidor se evalúa tras lookup; una fecha futura se rechaza durablemente.
+  Dimensiones son binary64 finitas; enteros que pierdan precisión al convertir se
+  rechazan. No normalización Unicode NFC/NFD ni corrección de fechas silenciosa.
 
-initial_height_m y last_watered_at en creación son valores iniciales de fecha/
-procedencia histórica desconocida: no fabrican mediciones ni eventos. El historial
-de crecimiento no sobrescribe la altura inicial. No se añade una segunda columna
-editable de altura actual ni se implementa su proyección todavía. Elegir species_id
-no rellena ni sobrescribe parámetros de planta. El catálogo puede estar vacío.
+PATCH vacío y null de obligatorio se rechazan. Omisión no equivale a null en la
+huella: PATCH omitido conserva, null limpia nullable. Rechazar claves extra o
+repetidas, surrogates aislados y NUL (no representable en PostgreSQL text).
+Cuerpo y operación canónica <=65536 bytes, profundidad <=16 antes del parser;
+streaming no elude el límite. Grupo indivisible <=4 entidades y 65536 bytes.
+JCS solo canonicaliza la intención interna rest-v1; el recibo conserva los bytes
+REST generados por SQL. No se modifica el hash/envelope sync ni el JSON E.3.
 
-## Transacciones, concurrencia y borrado
+GETs conservan jardines, plantas, especies, growth-history y watering-events,
+incluidos listados globales y por planta. `{items,total,limit,offset}`: default20,
+máximo100, offset0..1000000; orden created_at/id y fechas históricas descendentes.
+Paginación de UI, sin cursor/feed HTTP ni ETag de colección o If-None-Match/304.
+Especies solo lectura; vacío permitido. No PUT ni edición/borrado de hechos.
 
-ResourceRepository valida el token con auth_access y fija blueflora.owner_id de
-ámbito transaccional **en la misma conexión** que opera con los recursos. Se usa
-solo el rol API y las mismas políticas USING/WITH CHECK ya existentes. No se
-utiliza owner_transaction de migraciones para atender peticiones.
+## Errores y confirmación
 
-Cada asignación de jardín comprueba visibilidad y bloquea el jardín. Las claves
-compuestas siguen impidiendo asociaciones entre propietarios aunque se omitiese
-una comprobación de aplicación. El jardín solo se elimina cuando no tiene ninguna
-planta vinculada, incluidas las borradas lógicamente (409 si tiene referencias).
-No se desvinculan o eliminan plantas automáticamente para liberar el jardín.
+- Sin recibo: 401/403, 422 estructural (incluida Key ausente/inválida), 428 sin
+  If-Match, 413 límite, 415 medio, fallos DB/5xx. No detalles SQL/inputs secretos.
+- Durables: 404 resource_not_found para ausente/ajeno sin estado; 412
+  revision_conflict propio; 409 entity_exists, identity_unavailable,
+  entity_content_mismatch, garden_archived; 422 timestamp_in_future con server_time.
+- Key usada para otra intención: 409 operation_id_reused sin reemplazar el recibo.
+  Corregir un rechazo terminal requiere Key nueva; repetir la misma conserva error.
+- Error inesperado revierte datos, contador, grupo y recibo. Deadlock/serialización
+  permiten hasta tres intentos internos con los mismos bytes/ID; agotamiento 503.
+  Respuesta perdida tras COMMIT se recupera con replay, sin otra operación.
 
-DELETE planta fija deleted_at, updated_at e incrementa revision; no ejecuta DELETE
-SQL. Repetirlo es idempotente. GET individual de planta borrada devuelve 404; el
-listado puede incluir sus tombstones con include_deleted=true. Los historiales
-individuales permanecen consultables y los globales conservan plant_ref_id y el
-nombre del momento del registro. No se aceptan eventos nuevos para plantas borradas.
-La FK opcional de conservación histórica de 0001 no se modifica.
+Recursos privados: no-store/no-cache. Datos, grupos y recibos se confirman antes
+de emitir respuesta HTTP; sin HTTPException que revierta un rechazo durable.
 
-Registrar un riego bloquea la planta, inserta el evento y actualiza last_watered_at
-solo si el evento es posterior al valor existente o este es desconocido. El cambio
-incrementa revision y actualiza updated_at. Un evento antiguo se conserva sin hacer
-retroceder la fecha. Ante cualquier fallo se revierte toda la transacción: no queda
-un evento confirmado con una actualización de planta fallida.
+## Persistencia y permisos
 
-Repetir el mismo UUID de riego para la misma planta y mismo instante devuelve el
-evento existente sin duplicarlo ni incrementar otra vez revision. Un contenido
-incompatible produce 409. Las otras creaciones con UUID duplicado producen 409;
-no se implementan respuestas de sincronización ni resolución de conflictos offline.
+Solo resource_apply(uuid,text) escribe; repositorios Python hacen SELECT. Rol API
+sin INSERT/UPDATE/DELETE ni permisos de columna de 0003; sin acceso directo a tablas
+privadas. FORCE RLS, owner derivado de auth_access y relaciones compuestas intactos.
+owner_id GUC depende de proceso/conexión confiable, no es prueba contra credenciales
+runtime comprometidas. La guardia de arranque/petición verifica head y capacidades,
+sin migrar automáticamente ni recurrir al escritor anterior.
 
-## Permisos aprobados y errores
-
-0003_resource_permissions concede únicamente:
-
-- gardens: SELECT, INSERT, DELETE y UPDATE(name,description).
-- plants: SELECT, INSERT y UPDATE(garden_id,species_id,name,species_label,
-  initial_height_m,watering_frequency_days,last_watered_at,revision,deleted_at,updated_at).
-- species: SELECT.
-- growth_history y watering_events: SELECT, INSERT.
-
-En desarrollo se conceden a blueflora_api y en pruebas a blueflora_api_test. No hay
-nuevas columnas, tablas, índices, roles, funciones privilegiadas ni cambios de RLS.
-No se conceden DELETE físico de plantas, escritura de catálogo, cambios de políticas,
-permisos sobre auth ni privilegios por defecto para objetos futuros. Los campos
-internos que SQL permite actualizar se gestionan exclusivamente desde servicios.
-
-401: token ausente/inválido/caducado/revocado. 404 resource_not_found: identificador
-inexistente, ajeno o relación no visible; no se indica cuál de ellos ocurrió.
-422 invalid_request: entrada inválida, campos extra o paginación fuera de límites.
-409 resource_conflict: UUID en conflicto o jardín con referencias. 503 para fallos
-de almacenamiento inesperados, sin detalles SQL. Todos los errores evitan valores
-secretos y las respuestas privadas incluyen Cache-Control: no-store.
-
-## Migrar y verificar
-
-Desde backend con el entorno virtual:
-
-```bash
-python -m app.db.manage upgrade --test
-python -m pytest -q -W error
-python -m app.db.manage upgrade
-python -m app.db.manage current
-python -m app.db.manage check-schema
-python -m app.db.manage check-schema --test
-```
-
-La revisión actual esperada pasa a 0003_resource_permissions. Su downgrade solo
-retira los permisos concedidos y no borra filas, columnas ni políticas; no se usa
-como limpieza de datos. Las pruebas siguen aislándose en esquemas UUID efímeros
-de blueflora_test y no insertan datos de demostración en desarrollo.
+Ver [diseño aprobado](sync/e4a-contract-gateway-migration.md),
+[resultados](sync/e4-validation-results.md) y [migración y límites](sync/e4-deployment.md).

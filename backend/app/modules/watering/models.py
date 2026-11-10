@@ -9,7 +9,8 @@ from app.db.base import Base
 class WateringEvent(Base):
     __tablename__ = "watering_events"
     __table_args__ = (
-        ForeignKeyConstraint(["owner_id", "plant_id"], ["plants.owner_id", "plants.id"], ondelete="SET NULL (plant_id)"),
+        ForeignKeyConstraint(["owner_id", "plant_ref_id"], ["plant_identities.owner_id", "plant_identities.id"], ondelete="RESTRICT"),
+        ForeignKeyConstraint(["owner_id", "plant_id"], ["plants.owner_id", "plants.id"], ondelete="RESTRICT"),
         CheckConstraint("plant_id IS NULL OR plant_id = plant_ref_id", name="matching_plant_reference"),
         CheckConstraint("event_type = 'manual'", name="manual_only"),
         CheckConstraint("length(btrim(plant_name_snapshot)) > 0", name="nonempty_snapshot"),

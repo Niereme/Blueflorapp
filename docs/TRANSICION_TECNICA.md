@@ -1,3 +1,37 @@
+> **Cierre autorizado de 3.2E.4 — 2026-11-10.** Hito Git v0.3.5;
+> creación de commit y publicación en origin/main autorizadas, publicación pendiente
+> de comprobación. Se conservan las limitaciones documentadas. E.5 no iniciada ni
+> autorizada. Los estados de preparación anteriores quedan como trazabilidad.
+
+# Estado vigente — cierre autorizado E.4 (2026-11-10)
+
+Implementación y validación técnica de **3.2E.4 completadas; cierre autorizado, publicación Git pendiente**.
+Hito Git autorizado **v0.3.5**, sin cambiar versiones internas ni crear tag/release.
+Las **292 pruebas aisladas** aprobadas corresponden a la ejecución anterior;
+no se repitieron para esta preparación documental.
+
+Respaldo y restauración acreditados para el origen vacío; fallo inicial de
+comparación CHECK diagnosticado y resuelto por aceptación exclusiva de las dos
+expresiones completas de **bf-growth-diameter-exact-v1**. Se conservan intentos
+fallidos y resoluciones en sus informes históricos. Migración conjunta de
+desarrollo hasta **0005_mutation_gateway** completada; verificaciones posteriores
+READ ONLY y carga/lifespan/liveness correctas, proceso temporal cerrado.
+No hubo CRUD HTTP en desarrollo ni despliegue persistente.
+
+Datos poblados sintéticos en pruebas no equivalen a un backfill poblado observado
+en desarrollo. Rendimiento y PITR no acreditados. El contexto de propietario
+confía en el proceso/conexión API; RLS no autentica credenciales runtime comprometidas.
+Flutter continúa sin HTTP, login ni sincronización. **E.5 no iniciada ni autorizada**.
+El usuario autorizó el cierre E.4 y el commit/push de los 56 archivos revisados.
+La publicación se confirmará contra origin/main; este documento no la presume.
+
+E.3 publicada en af2bd84dadae3fba8a8fd8119c54a2307520cfa9.
+Ver [validación E.4](../backend/docs/sync/e4-validation-results.md),
+[migración real](../backend/docs/sync/e4-development-migration-results.md) y
+[contrato REST](../backend/docs/resources-api.md).
+
+## Antecedente conservado E.3
+
 # BlueFlora — transición técnica E.3
 
 Estado al 2026-11-07, America/Mexico_City: **implementación local A/B/C y validación

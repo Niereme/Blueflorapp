@@ -10,6 +10,7 @@ class WateringCreate(Identified,Measured):
 
 
 class WateringRead(BaseModel):
+    revision: str = "1"
     id: UUID
     plant_id: UUID | None
     plant_ref_id: UUID
